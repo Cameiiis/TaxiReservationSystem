@@ -39,12 +39,13 @@ class RoundedButton(tk.Canvas):
 
 
 class RideSelectionPopup:
-    def __init__(self, parent, distance, pickup_coords, destination_coords, on_book):
+    def __init__(self, parent, distance, pickup_coords, destination_coords, on_book, parent_gui):
         self.parent = parent
         self.distance = distance
         self.pickup_coords = pickup_coords
         self.destination_coords = destination_coords
         self.on_book = on_book
+        self.parent_gui = parent_gui  # Reference to main GUI
         self.selected_ride = None
         self.is_closing = False
         
@@ -114,7 +115,7 @@ class RideSelectionPopup:
                 img = img.resize((new_width, new_height), Image.Resampling.BILINEAR)
                 self.popup_frame_img = ImageTk.PhotoImage(img)
                 self.popup_height = new_height
-                print(f"âœ“ Loaded pop up.png ({new_width}x{new_height})")
+                print(f"✓ Loaded pop up.png ({new_width}x{new_height})")
             
             # Load sedan image - 300x75 size
             sedan_path = os.path.join(frames_folder, "sedan.png")
@@ -122,7 +123,7 @@ class RideSelectionPopup:
                 img = Image.open(sedan_path)
                 img = img.resize((385, 85), Image.Resampling.BILINEAR)
                 self.sedan_icon = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded sedan.png (300x75)")
+                print(f"✓ Loaded sedan.png (300x75)")
             
             # Load SUV image - 300x75 size
             suv_path = os.path.join(frames_folder, "suv.png")
@@ -130,7 +131,7 @@ class RideSelectionPopup:
                 img = Image.open(suv_path)
                 img = img.resize((385, 85), Image.Resampling.BILINEAR)
                 self.suv_icon = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded suv.png (300x75)")
+                print(f"✓ Loaded suv.png (300x75)")
             
             # Load book button - 300x75 size
             book_btn_path = os.path.join(frames_folder, "book ride button.png")
@@ -138,7 +139,7 @@ class RideSelectionPopup:
                 img = Image.open(book_btn_path)
                 img = img.resize((400, 85), Image.Resampling.BILINEAR)
                 self.book_btn_img = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded book ride button.png (300x75)")
+                print(f"✓ Loaded book ride button.png (300x75)")
             
             # Load available rides header
             available_rides_path = os.path.join(frames_folder, "available rides.png")
@@ -146,7 +147,7 @@ class RideSelectionPopup:
                 img = Image.open(available_rides_path)
                 img = img.resize((250, 50), Image.Resampling.BILINEAR)
                 self.available_rides_img = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded available rides.png (250x50)")
+                print(f"✓ Loaded available rides.png (250x50)")
                 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -174,7 +175,7 @@ class RideSelectionPopup:
         """Update cached addresses"""
         self.pickup_address = pickup
         self.destination_address = destination
-        print(f"âœ“ Addresses loaded: {pickup} â†’ {destination}")
+        print(f"✓ Addresses loaded: {pickup} → {destination}")
     
     def reverse_geocode(self, lat, lon):
         """Reverse geocode coordinates to address"""
@@ -204,7 +205,7 @@ class RideSelectionPopup:
         """Place buttons on top of frame - INSTANT display with WIDER gaps"""
         
         # Calculate vertical spacing with WIDER gaps between elements
-        available_y = self.popup_height * 0.07  # Header at ~15% from top
+        available_y = self.popup_height * 0.08  # Header at ~15% from top
         sedan_y = self.popup_height * 0.28      # Sedan at ~38% (more gap)
         suv_y = self.popup_height * 0.56        # SUV at ~63% (more gap)
         book_y = self.popup_height * 0.83       # Book button at ~87% (more gap)
@@ -257,7 +258,7 @@ class RideSelectionPopup:
         self.selected_ride = ride_type
         print(f"Selected: {ride_type}")
         fare = self.calculate_fare(ride_type.lower())
-        print(f"Fare: â‚±{fare:.2f}")
+        print(f"Fare: ₱{fare:.2f}")
     
     def calculate_fare(self, ride_type):
         """Calculate fare based on ride type"""
@@ -265,27 +266,28 @@ class RideSelectionPopup:
         return base_fare + (self.distance * 15)
     
     def book_ride(self):
-        """Handle book ride button - NO LAG"""
+        """Handle book ride button - Opens payment in main GUI"""
         if not self.selected_ride:
             messagebox.showwarning("No Selection", "Please select a ride type (Sedan or SUV)")
             return
         
         fare = self.calculate_fare(self.selected_ride.lower())
         
-        # Use cached addresses (already fetched in background)
-        msg = (
-            f"Ride: {self.selected_ride}\n\n"
-            f"Pickup:\n{self.pickup_address}\n\n"
-            f"Destination:\n{self.destination_address}\n\n"
-            f"Distance: {self.distance:.2f} km\n"
-            f"Fare: â‚±{fare:.2f}\n\n"
-            f"Confirm booking?"
-        )
+        # Close this popup and map window
+        self.close()
         
-        if messagebox.askyesno("Confirm Booking", msg):
-            self.close()
-            if self.on_book:
-                self.on_book(self.selected_ride, fare)
+        # Close map window
+        if self.on_book:
+            self.on_book()
+        
+        # Open payment frame in main GUI
+        if self.parent_gui:
+            self.parent_gui.open_payment_from_map(
+                self.selected_ride, 
+                fare, 
+                self.pickup_address, 
+                self.destination_address
+            )
     
     def close(self):
         """Close popup instantly"""
@@ -296,8 +298,9 @@ class RideSelectionPopup:
 
 
 class QuickCabMapSystem:
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, parent_gui=None):
         self.parent_window = parent_window
+        self.parent_gui = parent_gui  # Store reference to main GUI
         self.davao_center = (7.0731, 125.6128)
 
         # State
@@ -312,7 +315,7 @@ class QuickCabMapSystem:
 
         # Window
         self.root = tk.Toplevel(parent_window)
-        self.root.title("ðŸš• QuickCab - Book Your Ride")
+        self.root.title("🚕 QuickCab - Book Your Ride")
 
         window_width, window_height = 428, 926
         screen_width = self.root.winfo_screenwidth()
@@ -331,7 +334,7 @@ class QuickCabMapSystem:
 
         self.root.protocol("WM_DELETE_WINDOW", self.go_back)
 
-        print("âœ… QuickCab Map System Ready")
+        print("✅ QuickCab Map System Ready")
 
     # ---------------- UI ---------------- #
 
@@ -342,13 +345,13 @@ class QuickCabMapSystem:
 
         # Rounded back button
         back_btn = RoundedButton(
-            frame, text="â† Back", command=self.go_back,
+            frame, text="← Back", command=self.go_back,
             bg_color="#1e40af", fg_color="white", bg="#1e40af", width=80
         )
         back_btn.place(x=10, y=10, width=80, height=30)
 
         tk.Label(
-            frame, text="ðŸš• QuickCab - Book Your Ride",
+            frame, text="🚕 QuickCab - Book Your Ride",
             bg="#1e40af", fg="white",
             font=("Arial", 13, "bold")
         ).pack(pady=12)
@@ -362,8 +365,8 @@ class QuickCabMapSystem:
             bg="white", font=("Arial", 13, "bold")
         ).pack(anchor="w", padx=15, pady=(15, 10))
 
-        self.pickup_label = self.create_location_box(frame, "â—", "#3b82f6", "Current Location")
-        self.destination_label = self.create_location_box(frame, "â—", "#111111", "Enter Destination")
+        self.pickup_label = self.create_location_box(frame, "●", "#3b82f6", "Current Location")
+        self.destination_label = self.create_location_box(frame, "●", "#111111", "Enter Destination")
 
     def create_location_box(self, parent, icon, color, text):
         box = tk.Frame(parent, bg="#f5f5f5", highlightbackground="#ddd", highlightthickness=1)
@@ -388,7 +391,6 @@ class QuickCabMapSystem:
         self.map_widget.add_left_click_map_command(self.map_click)
 
     def setup_bottom_controls(self):
-        # ðŸŽ¯ RESIZE BOTTOM CONTAINER HEIGHT HERE (default: 80)
         frame = tk.Frame(self.root, bg="white", height=80)
         frame.pack(fill="x", side="bottom")
         frame.pack_propagate(False)
@@ -402,29 +404,27 @@ class QuickCabMapSystem:
         confirm_btn_img = None
         
         try:
-            # ðŸŽ¯ RESIZE CLEAR ALL BUTTON HERE (width, height)
-            clear_btn_width = 175  # â† Change width here
-            clear_btn_height = 50  # â† Change height here
+            clear_btn_width = 185
+            clear_btn_height = 50
             clear_path = os.path.join(frames_folder, "clear all button.png")
             if os.path.exists(clear_path):
                 img = Image.open(clear_path)
                 img = img.resize((clear_btn_width, clear_btn_height), Image.Resampling.BILINEAR)
                 clear_btn_img = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded clear all button.png ({clear_btn_width}x{clear_btn_height})")
+                print(f"✓ Loaded clear all button.png ({clear_btn_width}x{clear_btn_height})")
             
-            # ðŸŽ¯ RESIZE CONFIRM BOOKING BUTTON HERE (width, height)
-            confirm_btn_width = 200  # â† Change width here
-            confirm_btn_height = 50  # â† Change height here
+            confirm_btn_width = 180
+            confirm_btn_height = 50
             confirm_path = os.path.join(frames_folder, "confirm booking button.png")
             if os.path.exists(confirm_path):
                 img = Image.open(confirm_path)
                 img = img.resize((confirm_btn_width, confirm_btn_height), Image.Resampling.BILINEAR)
                 confirm_btn_img = ImageTk.PhotoImage(img)
-                print(f"âœ“ Loaded confirm booking button.png ({confirm_btn_width}x{confirm_btn_height})")
+                print(f"✓ Loaded confirm booking button.png ({confirm_btn_width}x{confirm_btn_height})")
         except Exception as e:
             print(f"Error loading button images: {e}")
         
-        # Clear All button (image or fallback)
+        # Clear All button
         if clear_btn_img:
             self.clear_button = tk.Button(
                 container, image=clear_btn_img, border=0, relief="flat",
@@ -432,8 +432,7 @@ class QuickCabMapSystem:
                 borderwidth=0, highlightthickness=0, bg="white", activebackground="white"
             )
             self.clear_button.image = clear_btn_img
-            # ðŸŽ¯ RESIZE GAP BETWEEN BUTTONS HERE (default: padx=5)
-            self.clear_button.pack(side="left", padx=5)  # â† Change padx for spacing
+            self.clear_button.pack(side="left", padx=5)
         else:
             clear_btn = RoundedButton(
                 container, text="Clear All", command=self.clear_all,
@@ -441,7 +440,7 @@ class QuickCabMapSystem:
             )
             clear_btn.pack(side="left", padx=5)
 
-        # Confirm Booking button (image or fallback)
+        # Confirm Booking button
         if confirm_btn_img:
             self.confirm_button = tk.Button(
                 container, image=confirm_btn_img, border=0, relief="flat",
@@ -449,8 +448,7 @@ class QuickCabMapSystem:
                 borderwidth=0, highlightthickness=0, bg="white", activebackground="white"
             )
             self.confirm_button.image = confirm_btn_img
-            # ðŸŽ¯ RESIZE GAP BETWEEN BUTTONS HERE (default: padx=5)
-            self.confirm_button.pack(side="left", padx=5)  # â† Change padx for spacing
+            self.confirm_button.pack(side="left", padx=5)
         else:
             confirm_btn = RoundedButton(
                 container, text="Confirm Booking", command=self.confirm_booking,
@@ -561,20 +559,19 @@ class QuickCabMapSystem:
             messagebox.showwarning("Incomplete", "Select pickup and destination")
             return
 
-        # Show ride selection popup with coordinates (addresses fetched async)
+        # Show ride selection popup with parent_gui reference
         self.active_popup = RideSelectionPopup(
             self.root, 
             self.distance,
-            self.pickup_coords,  # Pass coords instead of addresses
-            self.destination_coords,  # Pass coords instead of addresses
-            self.on_booking_confirmed
+            self.pickup_coords,
+            self.destination_coords,
+            self.close_map_for_payment,
+            self.parent_gui  # Pass GUI reference
         )
 
-    def on_booking_confirmed(self, ride_type, fare):
-        messagebox.showinfo(
-            "Booking Confirmed", 
-            f"{ride_type} booked!\nFare: â‚±{fare:.2f}\n\nDriver arriving in 5â€“10 minutes ðŸš•"
-        )
+    def close_map_for_payment(self):
+        """Called when booking is confirmed - closes map window"""
+        self.root.destroy()
 
     def go_back(self):
         self.parent_window.deiconify()

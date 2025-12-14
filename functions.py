@@ -12,10 +12,10 @@ def load_image(path, size):
         img = Image.open(path)
         img = img.resize(size, Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(img)
-        print(f"✓ Loaded: {path}")
+        print(f"âœ“ Loaded: {path}")
         return img, photo
     except Exception as e:
-        print(f"✗ Error loading {path}: {e}")
+        print(f"âœ— Error loading {path}: {e}")
         placeholder = Image.new('RGB', size, color=config.WINDOW_BG_COLOR)
         return placeholder, ImageTk.PhotoImage(placeholder)
 
@@ -112,13 +112,13 @@ def open_map_window(parent_window):
     try:
         from map_system import QuickCabMapSystem
         map_system = QuickCabMapSystem(parent_window)
-        print("✅ QuickCab Map window opened successfully!")
+        print("âœ… QuickCab Map window opened successfully!")
     except ImportError as e:
         messagebox.showerror(
             "QuickCab Error", 
             f"Could not import map_system.py!\n\nMake sure map_system.py is in the same folder.\n\nError: {e}"
         )
-        print(f"✗ Import error: {e}")
+        print(f"âœ— Import error: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open map window!\n\nError: {e}")
-        print(f"✗ Error opening map: {e}")
+        print(f"âœ— Error opening map: {e}")

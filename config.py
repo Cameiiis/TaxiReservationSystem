@@ -22,7 +22,8 @@ PAGE_IMAGES = [
     "Location.png",
     "LOGIN PAGE.png",
     "Sign Up.png",
-    "home.png"
+    "home.png",
+    "payment method.png"  # NEW: Payment frame
 ]
 
 BUTTON_IMAGES = {
@@ -34,7 +35,14 @@ BUTTON_IMAGES = {
     'alr_have_acc': ("alr have acc.png", (250, 60)),
     'menu_button': ("menu button.png", (30, 20)),
     'menu_button_white': ("menu button white.png", (30, 20)),
-    'menu_panel': ("Left Menu page.png", (428, 926))
+    'menu_panel': ("Left Menu page.png", (428, 926)),
+    # NEW: Payment frame buttons
+    'apply_coupon': ("apply coupon.png", (350, 60)),
+    'apply_button': ("apply button.png", (100, 50)),
+    'visa_button': ("visa button.png", (320, 70)),
+    'wallet_button': ("wallet button.png", (320, 70)),
+    'cash_button': ("cash button.png", (320, 70)),
+    'book_ride_button': ("book ride button.png", (320, 70))
 }
 
 HOME_ICONS = {
@@ -65,3 +73,7 @@ PAGE_LOCATION = 4
 PAGE_LOGIN = 5
 PAGE_SIGNUP = 6
 PAGE_HOME = 7
+PAGE_PAYMENT = 8  # NEW: Payment page index
+
+# Payment Methods
+PAYMENT_METHODS = ['visa', 'wallet', 'cash']

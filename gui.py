@@ -19,6 +19,8 @@ class QuickCabGUI:
         # Initialize variables
         self.current_page = 0
         self.menu_open = False
+        self.selected_payment = None
+        self.booking_price = 52  # Default price from your image
         
         # Load all images
         print("\n🎨 Loading QuickCab Resources...\n")
@@ -46,6 +48,7 @@ class QuickCabGUI:
         self.create_buttons()
         self.create_entry_fields()
         self.create_menu()
+        self.create_payment_components()
     
     def create_buttons(self):
         """Create all buttons"""
@@ -106,6 +109,55 @@ class QuickCabGUI:
         self.fullname_entry = self.create_entry("Full Name")
         self.email_entry = self.create_entry("Email")
         self.signup_password_entry = self.create_entry("Password", is_password=True)
+    
+    def create_payment_components(self):
+        """Create payment frame components"""
+        # Apply Coupon header button
+        self.apply_coupon_btn = self.create_image_button(
+            self.button_images.get('apply_coupon'),
+            None,  # No action, just a header
+            "Apply Coupon",
+            is_link=False
+        )
+        
+        # Coupon text entry
+        self.coupon_entry = tk.Entry(
+            self.root, font=("Arial", 13), bg=config.WHITE,
+            fg=config.BLACK_TEXT, relief="flat", borderwidth=0, width=20
+        )
+        
+        # Apply button
+        self.apply_button = self.create_image_button(
+            self.button_images.get('apply_button'),
+            self.handle_apply_coupon,
+            "Apply"
+        )
+        
+        # Payment method buttons
+        self.visa_btn = self.create_image_button(
+            self.button_images.get('visa_button'),
+            lambda: self.select_payment_method('visa'),
+            "Visa"
+        )
+        
+        self.wallet_btn = self.create_image_button(
+            self.button_images.get('wallet_button'),
+            lambda: self.select_payment_method('wallet'),
+            "Wallet"
+        )
+        
+        self.cash_btn = self.create_image_button(
+            self.button_images.get('cash_button'),
+            lambda: self.select_payment_method('cash'),
+            "Cash"
+        )
+        
+        # Book Ride button
+        self.book_ride_btn = self.create_image_button(
+            self.button_images.get('book_ride_button'),
+            self.handle_book_ride,
+            "Book Ride"
+        )
     
     def create_menu(self):
         """Create menu components"""
@@ -212,6 +264,9 @@ class QuickCabGUI:
             
             elif self.current_page == config.PAGE_HOME:
                 self.draw_home_page()
+            
+            elif self.current_page == config.PAGE_PAYMENT:
+                self.draw_payment_page()
     
     def draw_login_page(self):
         """Draw login page components"""
@@ -239,18 +294,54 @@ class QuickCabGUI:
         """Draw home page components"""
         self.menu_btn.place(x=25, y=35, anchor="center")
         
-        # Create home icon buttons
+        # Create home icon buttons with payment functionality
         icon_names = ['car', 'map', 'activity', 'payment', 'coupon', 'coming_soon']
         for icon_name, (x, y) in zip(icon_names, config.HOME_ICON_POSITIONS):
             if self.home_icons.get(icon_name):
                 btn = tk.Button(
                     self.root, image=self.home_icons[icon_name], border=0,
                     relief="flat", cursor="hand2",
-                    command=lambda name=icon_name: functions.handle_home_icon_click(name, self.root),
+                    command=lambda name=icon_name: self.handle_home_icon_click_wrapper(name),
                     borderwidth=0, highlightthickness=0, bg=config.WINDOW_BG_COLOR,
                     activebackground=config.WINDOW_BG_COLOR
                 )
                 btn.place(x=x, y=y, anchor="center")
+    
+    def draw_payment_page(self):
+        """Draw payment page components"""
+        # Apply Coupon header (positioned based on your image)
+        self.apply_coupon_btn.place(x=214, y=200, anchor="center")
+        
+        # Coupon entry field with rounded rectangle background
+        self.create_rounded_rect(64, 250, 275, 295, 25, fill="white", outline="")
+        self.coupon_entry.place(x=170, y=272, anchor="center")
+        
+        # Apply button next to coupon entry
+        self.apply_button.place(x=320, y=272, anchor="center")
+        
+        # Payment Methods label
+        self.canvas.create_text(
+            60, 350, text="Payment Methods", 
+            font=("Arial", 14, "bold"), fill="black", anchor="w"
+        )
+        
+        # Payment method buttons (visa, wallet, cash)
+        self.visa_btn.place(x=214, y=430, anchor="center")
+        self.wallet_btn.place(x=214, y=520, anchor="center")
+        self.cash_btn.place(x=214, y=610, anchor="center")
+        
+        # Price display (same color and font size as booking)
+        self.canvas.create_text(
+            60, 750, text=f"₱{self.booking_price}", 
+            font=("Arial", 24, "bold"), fill=config.PRIMARY_COLOR, anchor="w"
+        )
+        self.canvas.create_text(
+            60, 775, text="Price", 
+            font=("Arial", 10), fill="#666", anchor="w"
+        )
+        
+        # Book Ride button
+        self.book_ride_btn.place(x=214, y=750, anchor="center")
     
     def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
         """Create a rounded rectangle"""
@@ -263,7 +354,10 @@ class QuickCabGUI:
             self.get_started_btn, self.allow_location_btn, self.login_btn,
             self.username_entry, self.password_entry, self.signup_btn,
             self.fullname_entry, self.email_entry, self.signup_password_entry,
-            self.signup_page_btn, self.signin_btn, self.menu_btn
+            self.signup_page_btn, self.signin_btn, self.menu_btn,
+            # Payment components
+            self.apply_coupon_btn, self.coupon_entry, self.apply_button,
+            self.visa_btn, self.wallet_btn, self.cash_btn, self.book_ride_btn
         ]
         for component in components:
             component.place_forget()
@@ -301,6 +395,18 @@ class QuickCabGUI:
         print("Navigating to home page...")
         self.current_page = config.PAGE_HOME
         self.draw_page()
+    
+    def goto_payment_page(self):
+        """Navigate to payment page"""
+        print("Navigating to payment page...")
+        self.current_page = config.PAGE_PAYMENT
+        self.draw_page()
+    
+    def handle_home_icon_click_wrapper(self, icon_name):
+        """Wrapper to handle home icon clicks and check for payment"""
+        result = functions.handle_home_icon_click(icon_name, self.root)
+        if result == 'open_payment':
+            self.goto_payment_page()
     
     # ==================== MENU ====================
     
@@ -360,6 +466,74 @@ class QuickCabGUI:
         else:
             messagebox.showwarning("Sign Up Error", message)
             print(f"✗ Sign Up failed")
+    
+    # ==================== PAYMENT HANDLERS ====================
+    
+    def handle_apply_coupon(self):
+        """Handle coupon application"""
+        coupon_code = self.coupon_entry.get()
+        
+        if not coupon_code:
+            messagebox.showwarning("Coupon Error", "Please enter a coupon code")
+            return
+        
+        success, discount = functions.validate_coupon(coupon_code)
+        
+        if success:
+            # Apply discount (you can customize this logic)
+            if discount <= 100:  # Percentage discount
+                new_price = functions.calculate_discounted_price(
+                    self.booking_price, "percentage", discount
+                )
+                messagebox.showinfo(
+                    "Coupon Applied!", 
+                    f"Coupon '{coupon_code}' applied!\n{discount}% discount\nNew price: ₱{new_price:.2f}"
+                )
+            else:  # Fixed discount
+                new_price = functions.calculate_discounted_price(
+                    self.booking_price, "fixed", discount
+                )
+                messagebox.showinfo(
+                    "Coupon Applied!", 
+                    f"Coupon '{coupon_code}' applied!\n₱{discount} off\nNew price: ₱{new_price:.2f}"
+                )
+            
+            self.booking_price = new_price
+            self.draw_page()  # Refresh to show new price
+        else:
+            messagebox.showerror("Invalid Coupon", f"Coupon '{coupon_code}' is not valid")
+    
+    def select_payment_method(self, method):
+        """Handle payment method selection"""
+        self.selected_payment = method
+        print(f"Selected payment method: {method}")
+        messagebox.showinfo("Payment Method", f"Selected: {method.upper()}")
+    
+    def handle_book_ride(self):
+        """Handle book ride button"""
+        if not self.selected_payment:
+            messagebox.showwarning("Payment Required", "Please select a payment method")
+            return
+        
+        # Process payment
+        success, message = functions.process_payment(self.selected_payment, self.booking_price)
+        
+        if success:
+            messagebox.showinfo(
+                "Booking Confirmed!", 
+                f"Payment Method: {self.selected_payment.upper()}\n"
+                f"Amount: ₱{self.booking_price:.2f}\n\n"
+                f"Your ride has been booked!\nDriver arriving soon 🚕"
+            )
+            print(f"✓ Ride booked - Payment: {self.selected_payment}, Amount: ₱{self.booking_price:.2f}")
+            
+            # Reset and go back to home
+            self.selected_payment = None
+            self.booking_price = 52
+            self.coupon_entry.delete(0, tk.END)
+            self.goto_home_page()
+        else:
+            messagebox.showerror("Payment Failed", message)
     
     # ==================== ENTRY FIELD HANDLERS ====================
     
