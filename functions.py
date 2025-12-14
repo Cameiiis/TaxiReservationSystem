@@ -108,6 +108,8 @@ def handle_home_icon_click(icon_name, parent_window):
         open_wallet_window(parent_window)
     elif icon_name == 'activity':
         open_my_rides_window(parent_window)
+    elif icon_name == 'coupon':
+        open_voucher_window(parent_window)
     else:
         messagebox.showinfo("Feature", f"{icon_name.replace('_', ' ').title()} feature coming soon!")
 
@@ -158,3 +160,19 @@ def open_my_rides_window(parent_window):
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open My Rides window!\n\nError: {e}")
         print(f"❌ Error opening My Rides: {e}")
+
+def open_voucher_window(parent_window):
+    """Open the Voucher screen"""
+    try:
+        from voucher_screen import VoucherScreen
+        voucher = VoucherScreen(parent_window)
+        print("✅ Voucher window opened successfully!")
+    except ImportError as e:
+        messagebox.showerror(
+            "QuickCab Error", 
+            f"Could not import voucher_screen.py!\n\nMake sure voucher_screen.py is in the same folder.\n\nError: {e}"
+        )
+        print(f"❌ Import error: {e}")
+    except Exception as e:
+        messagebox.showerror("QuickCab Error", f"Could not open Voucher window!\n\nError: {e}")
+        print(f"❌ Error opening Voucher: {e}")
