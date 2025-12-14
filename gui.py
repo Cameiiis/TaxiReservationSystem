@@ -1,7 +1,8 @@
-# gui.py - All GUI Components and Interface
+# gui.py - All GUI Components and Interface (WITH INTEGRATED MENU)
 
 import tkinter as tk
 from tkinter import Canvas, messagebox
+from PIL import Image, ImageTk
 import config
 import functions
 
@@ -19,13 +20,14 @@ class QuickCabGUI:
         # Initialize variables
         self.current_page = 0
         self.menu_open = False
+        self.home_icon_buttons = []  # Store home icon buttons for cleanup
         
         # Load all images
-        print("\nÃ°Å¸Å½Â¨ Loading QuickCab Resources...\n")
+        print("\n🔨 Loading QuickCab Resources...\n")
         self.images, self.photo_images = functions.load_all_page_images()
         self.button_images = functions.load_all_button_images()
         self.home_icons = functions.load_all_home_icons()
-        print("\nÃ¢Å“â€¦ All resources loaded!\n")
+        print("\n✦ All resources loaded!\n")
         
         # Setup canvas
         self.canvas = Canvas(root, width=config.WINDOW_WIDTH, height=config.WINDOW_HEIGHT, 
@@ -36,8 +38,203 @@ class QuickCabGUI:
         # Create all UI components
         self.create_all_components()
         
+        # Load menu images
+        self.load_menu_images()
+        
+        # Create detailed menu panel
+        self.create_detailed_menu()
+        
         # Draw initial page
         self.draw_page()
+    
+    # ==================== MENU IMAGE LOADING ====================
+    
+    def load_menu_images(self):
+        """Load all menu-specific images"""
+        IMAGE_FOLDER = config.IMAGE_FOLDER
+        
+        # Load menu background
+        try:
+            img = Image.open(IMAGE_FOLDER + "Left-Menu page.png")
+            img = img.resize((428, 926), Image.Resampling.LANCZOS)
+            self.menu_bg = ImageTk.PhotoImage(img)
+            print("✅ Loaded: Left-Menu page.png")
+        except Exception as e:
+            print(f"❌ Error loading menu background: {e}")
+            self.menu_bg = None
+
+        # Load white menu button
+        try:
+            img = Image.open(IMAGE_FOLDER + "MENU BUTTON WHITE.png")
+            img = img.resize((30, 20), Image.Resampling.LANCZOS)
+            self.menu_btn_white_img = ImageTk.PhotoImage(img)
+            print("✅ Loaded: MENU BUTTON WHITE.png")
+        except Exception as e:
+            print(f"❌ Error loading white menu button: {e}")
+            self.menu_btn_white_img = None
+
+        # Load profile picture
+        try:
+            img = Image.open(IMAGE_FOLDER + "PROFILE FOR MENU.png")
+            img = img.resize((80, 80), Image.Resampling.LANCZOS)
+            self.profile_img = ImageTk.PhotoImage(img)
+            print("✅ Loaded: PROFILE FOR MENU.png")
+        except Exception as e:
+            print(f"❌ Error loading profile: {e}")
+            self.profile_img = None
+    
+    # ==================== DETAILED MENU CREATION ====================
+    
+    def create_detailed_menu(self):
+        """Create detailed menu panel with canvas"""
+        # Create menu frame container (covers everything)
+        self.menu_frame = tk.Frame(
+            self.root,
+            bg="#3D5AFE",
+            width=428,
+            height=926
+        )
+        
+        # Create menu canvas inside frame
+        self.menu_canvas = Canvas(
+            self.menu_frame,
+            width=428,
+            height=926,
+            bg="#3D5AFE",
+            highlightthickness=0,
+            borderwidth=0
+        )
+        self.menu_canvas.pack(fill="both", expand=True)
+        
+        # Draw background image
+        if self.menu_bg:
+            self.menu_canvas.create_image(0, 0, image=self.menu_bg, anchor="nw")
+        
+        # Add white menu button (close button)
+        if self.menu_btn_white_img:
+            self.menu_canvas.create_image(25, 35, image=self.menu_btn_white_img, anchor="center")
+            # Make it clickable
+            close_btn_area = self.menu_canvas.create_rectangle(
+                10, 20, 40, 50, fill="", outline="", tags="close_menu"
+            )
+            self.menu_canvas.tag_bind("close_menu", "<Button-1>", lambda e: self.close_menu())
+        
+        # Add profile picture
+        if self.profile_img:
+            self.menu_canvas.create_image(30, 90, image=self.profile_img, anchor="nw")
+        
+        # Draw "Xander Calzado" text
+        self.menu_canvas.create_text(
+            30, 185,
+            text="Xander Calzado",
+            font=("Poppins", 18, "bold"),
+            fill="white",
+            anchor="w"
+        )
+        
+        # Draw menu items with proper spacing
+        menu_items = [
+            ("My Account", 280, self.goto_my_account),
+            ("Notification", 340, self.goto_notification),
+            ("About", 400, self.goto_about),
+            ("Privacy Policy", 460, self.goto_privacy),
+            ("Terms & Condition", 520, self.goto_terms)
+        ]
+        
+        for item_text, y_pos, command in menu_items:
+            text_id = self.menu_canvas.create_text(
+                30, y_pos,
+                text=item_text,
+                font=("Poppins", 16),
+                fill="white",
+                anchor="w",
+                tags=f"menu_{item_text.replace(' ', '_').lower()}"
+            )
+            # Make text clickable
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+                                     "<Button-1>", lambda e, cmd=command: cmd())
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+                                     "<Enter>", lambda e: self.root.config(cursor="hand2"))
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+                                     "<Leave>", lambda e: self.root.config(cursor=""))
+        
+        # Draw "Logout" text at bottom
+        logout_id = self.menu_canvas.create_text(
+            30, 850,
+            text="Logout",
+            font=("Poppins", 16),
+            fill="white",
+            anchor="w",
+            tags="menu_logout"
+        )
+        # Make logout clickable
+        self.menu_canvas.tag_bind("menu_logout", "<Button-1>", lambda e: self.handle_logout())
+        self.menu_canvas.tag_bind("menu_logout", "<Enter>", 
+                                 lambda e: self.root.config(cursor="hand2"))
+        self.menu_canvas.tag_bind("menu_logout", "<Leave>", 
+                                 lambda e: self.root.config(cursor=""))
+        
+        # Initially hide menu frame
+        self.menu_frame.place_forget()
+    
+    # ==================== MENU HANDLERS ====================
+    
+    def goto_my_account(self):
+        """Navigate to My Account"""
+        print("My Account clicked")
+        messagebox.showinfo("My Account", "My Account feature coming soon!")
+        self.close_menu()
+    
+    def goto_notification(self):
+        """Navigate to Notifications"""
+        print("Notification clicked")
+        messagebox.showinfo("Notifications", "Notifications feature coming soon!")
+        self.close_menu()
+    
+    def goto_about(self):
+        """Navigate to About"""
+        print("About clicked")
+        messagebox.showinfo("About QuickCab", 
+                          "QuickCab - Your trusted ride-hailing service\n\n"
+                          "Version 1.0\n"
+                          "© 2024 QuickCab Inc.")
+        self.close_menu()
+    
+    def goto_privacy(self):
+        """Navigate to Privacy Policy"""
+        print("Privacy Policy clicked")
+        messagebox.showinfo("Privacy Policy", "Privacy Policy feature coming soon!")
+        self.close_menu()
+    
+    def goto_terms(self):
+        """Navigate to Terms & Conditions"""
+        print("Terms & Condition clicked")
+        messagebox.showinfo("Terms & Conditions", "Terms & Conditions feature coming soon!")
+        self.close_menu()
+    
+    def handle_logout(self):
+        """Handle logout"""
+        print("Logout clicked")
+        if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+            messagebox.showinfo("Logged Out", "You have been logged out successfully!")
+            
+            # Close menu first
+            self.close_menu()
+            
+            # Clear all entry fields
+            self.username_entry.delete(0, tk.END)
+            self.username_entry.insert(0, "Username:")
+            self.username_entry.config(fg=config.GRAY_TEXT)
+            
+            self.password_entry.delete(0, tk.END)
+            self.password_entry.insert(0, "Password:")
+            self.password_entry.config(fg=config.GRAY_TEXT, show="")
+            
+            # Navigate to login page
+            self.current_page = config.PAGE_LOGIN
+            self.draw_page()
+            
+            print("✅ Logged out successfully")
     
     # ==================== UI COMPONENT CREATION ====================
     
@@ -109,7 +306,7 @@ class QuickCabGUI:
     
     def create_menu(self):
         """Create menu components"""
-        # Regular menu button
+        # Regular menu button (for home page)
         menu_img = self.button_images.get('menu_button')
         if menu_img:
             self.menu_btn = tk.Button(
@@ -120,33 +317,10 @@ class QuickCabGUI:
             )
         else:
             self.menu_btn = tk.Button(
-                self.root, text="Ã¢ËœÂ°", font=("Arial", 20), border=0,
+                self.root, text="☰", font=("Arial", 20), border=0,
                 relief="flat", cursor="hand2", command=self.toggle_menu,
                 bg=config.WINDOW_BG_COLOR, fg=config.PRIMARY_COLOR
             )
-        
-        # White menu button (for menu panel)
-        menu_white_img = self.button_images.get('menu_button_white')
-        if menu_white_img:
-            self.menu_btn_white = tk.Button(
-                self.root, image=menu_white_img, border=0, relief="flat",
-                cursor="hand2", command=self.close_menu, borderwidth=0,
-                highlightthickness=0, bg=config.PRIMARY_COLOR,
-                activebackground=config.PRIMARY_COLOR
-            )
-        else:
-            self.menu_btn_white = tk.Button(
-                self.root, text="Ã¢ËœÂ°", font=("Arial", 20), border=0,
-                relief="flat", cursor="hand2", command=self.close_menu,
-                bg=config.PRIMARY_COLOR, fg="white"
-            )
-        
-        # Menu panel
-        self.menu_panel = tk.Label(self.root, bg=config.WINDOW_BG_COLOR)
-        panel_img = self.button_images.get('menu_panel')
-        if panel_img:
-            self.menu_panel.config(image=panel_img)
-            self.menu_panel.bind("<Button-1>", lambda e: self.close_menu())
     
     def create_image_button(self, image_photo, command, fallback_text, is_link=False):
         """Create a button with image or fallback text"""
@@ -194,6 +368,10 @@ class QuickCabGUI:
         self.canvas.delete("all")
         self.hide_all_components()
         
+        # Make sure menu is closed when changing pages
+        if self.menu_open:
+            self.close_menu()
+        
         if self.current_page < len(self.photo_images):
             self.canvas.create_image(214, 463, image=self.photo_images[self.current_page])
             
@@ -239,6 +417,11 @@ class QuickCabGUI:
         """Draw home page components"""
         self.menu_btn.place(x=25, y=35, anchor="center")
         
+        # Clear any existing home icon buttons
+        for btn in self.home_icon_buttons:
+            btn.destroy()
+        self.home_icon_buttons.clear()
+        
         # Create home icon buttons
         icon_names = ['car', 'map', 'activity', 'payment', 'coupon', 'coming_soon']
         for icon_name, (x, y) in zip(icon_names, config.HOME_ICON_POSITIONS):
@@ -251,6 +434,7 @@ class QuickCabGUI:
                     activebackground=config.WINDOW_BG_COLOR
                 )
                 btn.place(x=x, y=y, anchor="center")
+                self.home_icon_buttons.append(btn)  # Store reference
     
     def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
         """Create a rounded rectangle"""
@@ -267,6 +451,10 @@ class QuickCabGUI:
         ]
         for component in components:
             component.place_forget()
+        
+        # Hide all home icon buttons
+        for btn in self.home_icon_buttons:
+            btn.place_forget()
     
     # ==================== EVENT HANDLERS ====================
     
@@ -312,21 +500,27 @@ class QuickCabGUI:
             self.open_menu()
     
     def open_menu(self):
-        """Open menu panel"""
-        self.menu_panel.place(x=0, y=0, width=config.WINDOW_WIDTH, height=config.WINDOW_HEIGHT)
-        self.menu_panel.lift()
+        """Open detailed menu panel"""
+        # Show menu frame on top of everything - covers entire window
+        self.menu_frame.place(x=0, y=0, width=config.WINDOW_WIDTH, height=config.WINDOW_HEIGHT)
+        self.menu_frame.lift()
+        self.menu_frame.tkraise()
         
-        self.menu_btn_white.place(x=25, y=35, anchor="center")
-        self.menu_btn_white.lift()
+        # Hide menu button while menu is open
+        self.menu_btn.place_forget()
         
         self.menu_open = True
         print("Menu opened")
     
     def close_menu(self):
         """Close menu panel"""
-        self.menu_panel.place_forget()
-        self.menu_btn_white.place_forget()
+        self.menu_frame.place_forget()
         self.menu_open = False
+        
+        # Show menu button again if on home page
+        if self.current_page == config.PAGE_HOME:
+            self.menu_btn.place(x=25, y=35, anchor="center")
+        
         print("Menu closed")
     
     # ==================== AUTHENTICATION ====================
@@ -340,11 +534,11 @@ class QuickCabGUI:
         
         if success:
             messagebox.showinfo("Login Successful", message)
-            print(f"Ã¢Å“â€œ Login successful - Username: {username}")
+            print(f"✅ Login successful - Username: {username}")
             self.goto_home_page()
         else:
             messagebox.showerror("Login Failed", message)
-            print(f"Ã¢Å“â€” Login failed - Username: {username}")
+            print(f"❌ Login failed - Username: {username}")
     
     def handle_signup_submit(self):
         """Handle signup"""
@@ -356,10 +550,10 @@ class QuickCabGUI:
         
         if success:
             messagebox.showinfo("Sign Up Successful", message)
-            print(f"Ã¢Å“â€œ Sign Up successful - Name: {fullname}, Email: {email}")
+            print(f"✅ Sign Up successful - Name: {fullname}, Email: {email}")
         else:
             messagebox.showwarning("Sign Up Error", message)
-            print(f"Ã¢Å“â€” Sign Up failed")
+            print(f"❌ Sign Up failed")
     
     # ==================== ENTRY FIELD HANDLERS ====================
     

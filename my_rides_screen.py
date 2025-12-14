@@ -123,7 +123,7 @@ class MyRidesScreen:
                 img = Image.open(undo_path)
                 img = img.resize((70, 50), Image.Resampling.LANCZOS)
                 self.undo_btn_img = ImageTk.PhotoImage(img)
-                print(f"✅ Loaded undo button.png")
+                print(f"✓ Loaded undo button.png")
                 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -147,22 +147,22 @@ class MyRidesScreen:
         # Back/Undo button (top left) - blends with background
         if self.undo_btn_img:
             undo_btn = tk.Button(
-                header_frame, image=self.undo_btn_img, border=0, relief="flat",
+                self.root, image=self.undo_btn_img, border=0, relief="flat",
                 cursor="hand2", command=self.go_back,
-                borderwidth=0, highlightthickness=0, bg="#D2D2DF",
-                activebackground="#D2D2DF"
+                borderwidth=0, highlightthickness=0, bg="#C5C6D0",
+                activebackground="#C5C6D0"
             )
             undo_btn.image = self.undo_btn_img
-            undo_btn.place(x=10, y=15)
+            undo_btn.place(x=5, y=15)
         else:
-            # Fallback button
+            # Fallback text button if image not found
             undo_btn = tk.Button(
-                header_frame, text="← Back", font=("Arial", 12, "bold"),
+                self.root, text="← Back", font=("Arial", 12, "bold"),
                 bg="#3D5AFE", fg="white", border=0, relief="flat",
                 cursor="hand2", command=self.go_back,
                 width=8, height=1
             )
-            undo_btn.place(x=10, y=20)
+            undo_btn.place(x=20, y=55)
         
         # Title "History" - centered
         tk.Label(
@@ -318,22 +318,23 @@ class MyRidesScreen:
             wraplength=300, anchor="w", justify="left"
         ).pack(side="left", fill="x", expand=True)
         
-        # Bottom row (fare + date) - MORE SPACE
+        # Bottom row (fare + date) - ALIGNED PROPERLY
         bottom_frame = tk.Frame(content_frame, bg="white")
-        bottom_frame.pack(fill="x", padx=15, pady=(6, 8))
+        bottom_frame.pack(fill="x", padx=15, pady=(8, 8))
         
-        # Date (LEFT side, small gray)
-        tk.Label(
+        # Date (LEFT side, small gray) - ALIGNED
+        date_label = tk.Label(
             bottom_frame, text=ride['date'],
-            font=("Arial", 8), bg="white", fg="#999", anchor="w"
-        ).pack(side="left", pady=6)
+            font=("Arial", 7), bg="white", fg="#999", anchor="w"
+        )
+        date_label.pack(side="left")
         
-        # Fare (RIGHT side, bold blue) - bigger font, no cutoff
+        # Fare (RIGHT side, bold blue) - ALIGNED
         fare_label = tk.Label(
             bottom_frame, text=f"₱{ride['fare']}",
-            font=("Arial", 20, "bold"), bg="white", fg="#3D5AFE", anchor="e"
+            font=("Arial", 16, "bold"), bg="white", fg="#3D5AFE", anchor="e"
         )
-        fare_label.pack(side="right", padx=5)
+        fare_label.pack(side="right")
         
         # Make card clickable to view details
         def on_card_click(e):

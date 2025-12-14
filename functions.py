@@ -12,10 +12,10 @@ def load_image(path, size):
         img = Image.open(path)
         img = img.resize(size, Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(img)
-        print(f"âœ“ Loaded: {path}")
+        print(f"✅ Loaded: {path}")
         return img, photo
     except Exception as e:
-        print(f"âœ— Error loading {path}: {e}")
+        print(f"❌ Error loading {path}: {e}")
         placeholder = Image.new('RGB', size, color=config.WINDOW_BG_COLOR)
         return placeholder, ImageTk.PhotoImage(placeholder)
 
@@ -104,6 +104,10 @@ def handle_home_icon_click(icon_name, parent_window):
     
     if icon_name == 'map':
         open_map_window(parent_window)
+    elif icon_name == 'payment':
+        open_wallet_window(parent_window)
+    elif icon_name == 'activity':
+        open_my_rides_window(parent_window)
     else:
         messagebox.showinfo("Feature", f"{icon_name.replace('_', ' ').title()} feature coming soon!")
 
@@ -112,13 +116,45 @@ def open_map_window(parent_window):
     try:
         from map_system import QuickCabMapSystem
         map_system = QuickCabMapSystem(parent_window)
-        print("âœ… QuickCab Map window opened successfully!")
+        print("✅ QuickCab Map window opened successfully!")
     except ImportError as e:
         messagebox.showerror(
             "QuickCab Error", 
             f"Could not import map_system.py!\n\nMake sure map_system.py is in the same folder.\n\nError: {e}"
         )
-        print(f"âœ— Import error: {e}")
+        print(f"❌ Import error: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open map window!\n\nError: {e}")
-        print(f"âœ— Error opening map: {e}")
+        print(f"❌ Error opening map: {e}")
+
+def open_wallet_window(parent_window):
+    """Open the Wallet screen"""
+    try:
+        from wallet_screen import WalletScreen
+        wallet = WalletScreen(parent_window)
+        print("✅ Wallet window opened successfully!")
+    except ImportError as e:
+        messagebox.showerror(
+            "QuickCab Error", 
+            f"Could not import wallet_screen.py!\n\nMake sure wallet_screen.py is in the same folder.\n\nError: {e}"
+        )
+        print(f"❌ Import error: {e}")
+    except Exception as e:
+        messagebox.showerror("QuickCab Error", f"Could not open wallet window!\n\nError: {e}")
+        print(f"❌ Error opening wallet: {e}")
+
+def open_my_rides_window(parent_window):
+    """Open the My Rides screen"""
+    try:
+        from my_rides_screen import MyRidesScreen
+        my_rides = MyRidesScreen(parent_window)
+        print("✅ My Rides window opened successfully!")
+    except ImportError as e:
+        messagebox.showerror(
+            "QuickCab Error", 
+            f"Could not import my_rides_screen.py!\n\nMake sure my_rides_screen.py is in the same folder.\n\nError: {e}"
+        )
+        print(f"❌ Import error: {e}")
+    except Exception as e:
+        messagebox.showerror("QuickCab Error", f"Could not open My Rides window!\n\nError: {e}")
+        print(f"❌ Error opening My Rides: {e}")
