@@ -165,7 +165,8 @@ def open_voucher_window(parent_window):
     """Open the Voucher screen"""
     try:
         from voucher_screen import VoucherScreen
-        voucher = VoucherScreen(parent_window)
+        # Open without payment screen reference (standalone mode)
+        voucher = VoucherScreen(parent_window, payment_screen=None)
         print("✅ Voucher window opened successfully!")
     except ImportError as e:
         messagebox.showerror(

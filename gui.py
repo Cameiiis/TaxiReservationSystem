@@ -1,10 +1,13 @@
-# gui.py - All GUI Components and Interface (WITH INTEGRATED MENU)
+# gui.py - All GUI Components and Interface (WITH INTEGRATED MENU) - UPDATED
 
 import tkinter as tk
 from tkinter import Canvas, messagebox
 from PIL import Image, ImageTk
 import config
 import functions
+import os
+
+INFO_HEADER_COLOR = "#D2D2DF"
 
 class QuickCabGUI:
     def __init__(self, root):
@@ -21,6 +24,7 @@ class QuickCabGUI:
         self.current_page = 0
         self.menu_open = False
         self.home_icon_buttons = []  # Store home icon buttons for cleanup
+        self.info_frames = []  # Store references to open info frames
         
         # Load all images
         print("\n🔨 Loading QuickCab Resources...\n")
@@ -82,6 +86,18 @@ class QuickCabGUI:
         except Exception as e:
             print(f"❌ Error loading profile: {e}")
             self.profile_img = None
+        
+        # Load undo button image for info frames
+        self.undo_btn_img = None
+        try:
+            undo_path = IMAGE_FOLDER + "undo button.png"
+            if os.path.exists(undo_path):
+                img = Image.open(undo_path)
+                img = img.resize((70, 50), Image.Resampling.LANCZOS)
+                self.undo_btn_img = ImageTk.PhotoImage(img)
+                print("✅ Loaded: undo button.png")
+        except Exception as e:
+            print(f"❌ Error loading undo button: {e}")
     
     # ==================== DETAILED MENU CREATION ====================
     
@@ -182,35 +198,56 @@ class QuickCabGUI:
     def goto_my_account(self):
         """Navigate to My Account"""
         print("My Account clicked")
-        messagebox.showinfo("My Account", "My Account feature coming soon!")
         self.close_menu()
+        self.open_info_frame("my_account", "My Account", 
+                           "👤 Xander Calzado\n\n"
+                           "📧 xander@example.com\n"
+                           "📱 +63 912 345 6789\n\n"
+                           "⭐ Member since: 2023\n"
+                           "🚗 Total Rides: 47\n"
+                           "💰 Wallet: ₱2,150")
     
     def goto_notification(self):
         """Navigate to Notifications"""
         print("Notification clicked")
-        messagebox.showinfo("Notifications", "Notifications feature coming soon!")
         self.close_menu()
+        self.open_info_frame("notification", "Notifications", 
+                           "🔔 You have 3 notifications:\n\n"
+                           "📅 Ride completed - 2 hours ago\n"
+                           "💰 Payment received - 1 day ago\n"
+                           "🎉 Welcome bonus - 3 days ago\n\n"
+                           "No new notifications.")
     
     def goto_about(self):
         """Navigate to About"""
         print("About clicked")
-        messagebox.showinfo("About QuickCab", 
-                          "QuickCab - Your trusted ride-hailing service\n\n"
-                          "Version 1.0\n"
-                          "© 2024 QuickCab Inc.")
-        self.close_menu()
+        self.open_info_frame("about", "About QuickCab", 
+                           "QuickCab - Your trusted ride-hailing service\n\n"
+                           "Version 1.0\n"
+                           "© 2024 QuickCab Inc.\n\n"
+                           "Connecting you with reliable rides\n"
+                           "anytime, anywhere.")
     
     def goto_privacy(self):
         """Navigate to Privacy Policy"""
         print("Privacy Policy clicked")
-        messagebox.showinfo("Privacy Policy", "Privacy Policy feature coming soon!")
-        self.close_menu()
+        self.open_info_frame("privacy", "Privacy Policy", 
+                           "Your privacy is important to us.\n\n"
+                           "We collect necessary information to provide\n"
+                           "you with the best ride-hailing experience.\n\n"
+                           "Your data is securely stored and never shared\n"
+                           "with third parties without your consent.")
     
     def goto_terms(self):
         """Navigate to Terms & Conditions"""
         print("Terms & Condition clicked")
-        messagebox.showinfo("Terms & Conditions", "Terms & Conditions feature coming soon!")
-        self.close_menu()
+        self.open_info_frame("terms", "Terms & Conditions", 
+                           "By using QuickCab, you agree to:\n\n"
+                           "1. Use the service responsibly\n"
+                           "2. Treat drivers with respect\n"
+                           "3. Pay all fares promptly\n"
+                           "4. Follow all local laws and regulations\n\n"
+                           "Violation may result in account suspension.")
     
     def handle_logout(self):
         """Handle logout"""
@@ -235,6 +272,148 @@ class QuickCabGUI:
             self.draw_page()
             
             print("✅ Logged out successfully")
+    
+    # ==================== INFO FRAME DISPLAY ====================
+    
+    def open_info_frame(self, frame_type, title, content):
+        """Open an information frame with undo button"""
+        # Close menu first
+        self.close_menu()
+        
+        # Create frame window
+        frame_window = tk.Toplevel(self.root)
+        frame_window.title(title)
+        
+        # Set window size to match main window
+        frame_window.geometry(f"{config.WINDOW_WIDTH}x{config.WINDOW_HEIGHT}")
+        frame_window.resizable(False, False)
+        frame_window.configure(bg=config.WINDOW_BG_COLOR)
+        
+        # Center the window
+        self.center_window(frame_window)
+        
+        # Create canvas
+        canvas = tk.Canvas(
+            frame_window, width=config.WINDOW_WIDTH, height=config.WINDOW_HEIGHT,
+            bg=config.WINDOW_BG_COLOR, highlightthickness=0
+        )
+        canvas.pack(fill="both", expand=True)
+        
+        # Try to load specific frame image
+        image_loaded = False
+        if frame_type == "about":
+            image_path = config.IMAGE_FOLDER + "About.png"
+            image_loaded = self.load_frame_image(canvas, image_path)
+        elif frame_type == "privacy":
+            image_path = config.IMAGE_FOLDER + "Privacy Policy.png"
+            image_loaded = self.load_frame_image(canvas, image_path)
+        elif frame_type == "terms":
+            image_path = config.IMAGE_FOLDER + "Terms & Condition.png"
+            image_loaded = self.load_frame_image(canvas, image_path)
+        
+        if not image_loaded:
+            # For My Account, Notification, or if image loading failed
+            self.create_custom_info_frame(canvas, title, content)
+        
+        # Add undo button
+        self.add_undo_button(frame_window, canvas)
+        
+        # Store reference
+        self.info_frames.append(frame_window)
+        
+        # Handle window close
+        frame_window.protocol("WM_DELETE_WINDOW", lambda: self.close_frame(frame_window))
+        
+        print(f"✅ {title} frame opened")
+    
+    def center_window(self, window):
+        """Center a window on screen"""
+        window.update_idletasks()
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width // 2) - (config.WINDOW_WIDTH // 2)
+        y = (screen_height // 2) - (config.WINDOW_HEIGHT // 2)
+        window.geometry(f"+{x}+{y}")
+    
+    def load_frame_image(self, canvas, image_path):
+        """Load and display frame image, return True if successful"""
+        try:
+            if os.path.exists(image_path):
+                img = Image.open(image_path)
+                img = img.resize((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), Image.Resampling.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                
+                # Keep reference to prevent garbage collection
+                canvas.image = photo
+                canvas.create_image(0, 0, image=photo, anchor="nw")
+                print(f"✅ Loaded frame: {image_path}")
+                return True
+        except Exception as e:
+            print(f"❌ Error loading frame image: {e}")
+        return False
+    
+    def create_custom_info_frame(self, canvas, title, content):
+        """Create a custom information frame when image is not available"""
+        # Draw header
+        canvas.create_rectangle(
+    0, 0, config.WINDOW_WIDTH, 120,
+    fill=INFO_HEADER_COLOR, outline=""
+)
+        
+        canvas.create_text(
+            config.WINDOW_WIDTH // 2, 70,
+            text=title,
+            font=("Poppins", 24, "bold"),
+            fill="#333333"
+        )
+        
+        # Draw content area
+        canvas.create_rectangle(
+            20, 140, config.WINDOW_WIDTH - 20, config.WINDOW_HEIGHT - 100,
+            fill="white", outline="", width=0
+        )
+        
+        # Add content text (with word wrapping)
+        content_lines = content.split('\n')
+        y_position = 180
+        for line in content_lines:
+            canvas.create_text(
+                config.WINDOW_WIDTH // 2, y_position,
+                text=line,
+                font=("Poppins", 14),
+                fill="#333",
+                width=config.WINDOW_WIDTH - 60
+            )
+            y_position += 40
+    
+    def add_undo_button(self, frame_window, canvas):
+        """Add undo button to the frame"""
+        # Try to use pre-loaded undo button image
+        if self.undo_btn_img:
+            undo_btn = tk.Button(
+                frame_window, image=self.undo_btn_img, border=0, relief="flat",
+                cursor="hand2", command=lambda: self.close_frame(frame_window),
+                borderwidth=0, highlightthickness=0, bg=config.WINDOW_BG_COLOR,
+                activebackground=config.WINDOW_BG_COLOR
+            )
+            undo_btn.place(x=10, y=20)
+            return
+        
+        # Fallback to text button
+        undo_btn = tk.Button(
+            frame_window, text="← Back", font=("Arial", 12, "bold"),
+            bg=config.PRIMARY_COLOR, fg="white", border=0, relief="flat",
+            cursor="hand2", command=lambda: self.close_frame(frame_window),
+            width=8, height=1
+        )
+        undo_btn.place(x=20, y=30)
+    
+    def close_frame(self, frame_window):
+        """Close the info frame"""
+        if frame_window in self.info_frames:
+            self.info_frames.remove(frame_window)
+        frame_window.destroy()
+        print("← Closed info frame")
     
     # ==================== UI COMPONENT CREATION ====================
     

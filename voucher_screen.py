@@ -4,8 +4,9 @@ from PIL import Image, ImageTk
 import os
 
 class VoucherScreen:
-    def __init__(self, parent_window):
+    def __init__(self, parent_window, payment_screen=None):
         self.parent_window = parent_window
+        self.payment_screen = payment_screen  # NEW: Store reference to payment screen
         
         # Window dimensions
         self.window_width = 428
@@ -107,7 +108,7 @@ class VoucherScreen:
                 img = Image.open(undo_path)
                 img = img.resize((70, 50), Image.Resampling.LANCZOS)
                 self.undo_btn_img = ImageTk.PhotoImage(img)
-                print(f"✔ Loaded undo button.png")
+                print(f"✓ Loaded undo button.png")
                 
         except Exception as e:
             print(f"Error loading images: {e}")
@@ -428,7 +429,41 @@ class VoucherScreen:
             item_canvas.bind("<Leave>", on_leave)
     
     def use_voucher(self, voucher):
-        """Use/Apply voucher with enhanced confirmation dialog"""
+        """Use/Apply voucher - UPDATED to integrate with payment"""
+        # If opened from payment screen, apply directly
+        if self.payment_screen:
+            self.apply_voucher_to_payment(voucher)
+            return
+        
+        # Otherwise show dialog
+        self.show_voucher_dialog(voucher)
+    
+    def apply_voucher_to_payment(self, voucher):
+        """Apply voucher directly to payment screen"""
+        # Check if payment screen exists and has the method
+        if not self.payment_screen or not hasattr(self.payment_screen, 'apply_voucher_from_list'):
+            messagebox.showerror("Error", "Cannot apply voucher - payment screen not found")
+            return
+        
+        # Apply the voucher
+        success = self.payment_screen.apply_voucher_from_list(voucher)
+        
+        if success:
+            # Close voucher screen
+            self.go_back()
+            messagebox.showinfo(
+                "Voucher Applied! 🎉",
+                f"Voucher '{voucher['code']}' has been applied!\n\n"
+                f"Discount: {voucher['discount']}"
+            )
+        else:
+            messagebox.showwarning(
+                "Cannot Apply",
+                f"This voucher requires a minimum fare of ₱{voucher['min_fare']}"
+            )
+    
+    def show_voucher_dialog(self, voucher):
+        """Show voucher dialog for standalone use"""
         # Create custom confirmation dialog
         confirm_dialog = tk.Toplevel(self.root)
         confirm_dialog.title("Use Voucher")
@@ -472,11 +507,10 @@ class VoucherScreen:
             font=("Arial", 15, "bold"), bg="white", fg="#1a1a1a"
         ).pack(pady=(0, 20))
         
-        # Discount display - highlighted circle
+        # Discount display
         discount_canvas = Canvas(content, width=150, height=150, bg="white", highlightthickness=0)
         discount_canvas.pack(pady=15)
         
-        # Outer glow circles
         for i in range(75, 60, -5):
             discount_canvas.create_oval(
                 75-i, 75-i, 75+i, 75+i,
@@ -484,16 +518,13 @@ class VoucherScreen:
                 outline=""
             )
         
-        # Main circle
         discount_canvas.create_oval(15, 15, 135, 135, fill=accent_color, outline="")
-        
-        # Discount text
         discount_canvas.create_text(
             75, 75, text=voucher['discount'],
             font=("Arial", 40, "bold"), fill="white"
         )
         
-        # Details section with better styling
+        # Details
         details_frame = tk.Frame(content, bg="white")
         details_frame.pack(fill="x", pady=20)
         
@@ -517,7 +548,7 @@ class VoucherScreen:
                 font=("Arial", 11, "bold"), bg="white", fg="#1a1a1a"
             ).pack(side="right")
         
-        # Info message
+        # Info
         info_frame = tk.Frame(content, bg="#f0f9ff" if voucher['type'] == "percentage" else "#d1fae5")
         info_frame.pack(fill="x", pady=(15, 20))
         
@@ -531,20 +562,15 @@ class VoucherScreen:
         btn_frame.pack(fill="x", pady=5)
         
         def confirm_use():
-            # Copy code to clipboard
             self.root.clipboard_clear()
             self.root.clipboard_append(voucher['code'])
-            
             confirm_dialog.destroy()
-            
             messagebox.showinfo(
                 "Voucher Copied! 🎉",
                 f"Voucher code '{voucher['code']}' copied!\n\n"
                 f"Apply it at checkout to get {voucher['discount']} off."
             )
-            print(f"✅ Voucher used: {voucher['code']}")
         
-        # Use button - full width
         use_btn = tk.Button(
             btn_frame, text="✓ Use This Voucher", font=("Arial", 13, "bold"),
             bg=accent_color, fg="white", border=0, relief="flat",
@@ -552,7 +578,6 @@ class VoucherScreen:
         )
         use_btn.pack(fill="x", pady=(0, 8))
         
-        # Cancel button - outlined style
         cancel_btn = tk.Button(
             btn_frame, text="Cancel", font=("Arial", 11),
             bg="white", fg="#666", border=0, relief="flat",

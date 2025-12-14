@@ -159,11 +159,11 @@ class PaymentMethodScreen:
             )
             undo_btn.place(x=20, y=55)
         
-        # Apply Coupon button
+        # Apply Coupon button - NOW OPENS VOUCHER SCREEN
         if self.apply_coupon_img:
             apply_coupon_btn = tk.Button(
                 self.root, image=self.apply_coupon_img, border=0, relief="flat",
-                cursor="hand2", command=self.show_coupon_options,
+                cursor="hand2", command=self.open_voucher_screen,
                 borderwidth=0, highlightthickness=0, bg="#C5C6D0", 
                 activebackground="#C5C6D0"
             )
@@ -285,6 +285,58 @@ class PaymentMethodScreen:
             self.coupon_entry.insert(0, "Enter coupon code")
             self.coupon_entry.config(fg="#AAAAAA")
     
+    def open_voucher_screen(self):
+        """Open voucher screen to select a voucher"""
+        try:
+            from voucher_screen import VoucherScreen
+            # Open voucher screen with reference to this payment screen
+            VoucherScreen(self.root, payment_screen=self)
+            print("✅ Voucher screen opened from payment")
+        except ImportError as e:
+            messagebox.showerror(
+                "Voucher Error",
+                f"Could not import voucher_screen.py!\n\nMake sure voucher_screen.py is in the same folder.\n\nError: {e}"
+            )
+        except Exception as e:
+            messagebox.showerror("Voucher Error", f"Could not open voucher screen!\n\nError: {e}")
+    
+    def apply_voucher_from_list(self, voucher):
+        """Apply a voucher selected from the voucher screen"""
+        # Check if already applied
+        if self.coupon_applied:
+            messagebox.showwarning(
+                "Coupon Already Applied", 
+                "You can only use one coupon per ride. Remove the current coupon first."
+            )
+            return False
+        
+        # Check minimum fare requirement
+        if self.original_fare < voucher['min_fare']:
+            return False
+        
+        # Calculate discount
+        if voucher['type'] == "percentage":
+            discount = self.original_fare * (voucher['discount_value'] / 100)
+        else:  # fixed
+            discount = voucher['discount_value']
+        
+        # Apply discount
+        self.fare = self.original_fare - discount
+        if self.fare < 0:
+            self.fare = 0
+        
+        # Update price display
+        self.price_label.config(text=f"P{self.fare:.0f}")
+        self.coupon_applied = True
+        
+        # Update entry field
+        self.coupon_entry.delete(0, tk.END)
+        self.coupon_entry.insert(0, f"{voucher['code']} applied!")
+        self.coupon_entry.config(state="disabled", fg="#10b981")
+        
+        print(f"✓ Voucher {voucher['code']} applied - Discount: ₱{discount:.2f}, New fare: ₱{self.fare:.2f}")
+        return True
+    
     def show_coupon_options(self):
         """Show coupon options"""
         messagebox.showinfo(
@@ -349,7 +401,7 @@ class PaymentMethodScreen:
         # Visual feedback
         payment_methods = {
             'visa': '💳 Visa',
-            'wallet': '👛 Wallet',
+            'wallet': '💛 Wallet',
             'cash': '💵 Cash'
         }
         
