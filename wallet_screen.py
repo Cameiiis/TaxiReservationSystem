@@ -3,6 +3,8 @@ from tkinter import Canvas, messagebox, Scrollbar
 from PIL import Image, ImageTk
 import os
 from datetime import datetime
+from functions import get_wallet_data, add_wallet_funds_db
+import config
 
 class WalletScreen:
     def __init__(self, parent_window):
@@ -12,14 +14,10 @@ class WalletScreen:
         self.window_width = 428
         self.window_height = 926
         
-        # Wallet data
-        self.balance = 2000
-        self.transaction_history = [
-            {"type": "deposit", "amount": 500, "by": "admin", "date": "5th Sep 02:50 PM"},
-            {"type": "deposit", "amount": 1000, "by": "admin", "date": "3rd Sep 10:30 AM"},
-            {"type": "withdraw", "amount": 200, "by": "user", "date": "2nd Sep 03:15 PM"},
-            {"type": "deposit", "amount": 700, "by": "admin", "date": "1st Sep 11:20 AM"},
-        ]
+        # Get wallet data from database
+        wallet_data = get_wallet_data()
+        self.balance = wallet_data["balance"]
+        self.transaction_history = wallet_data["transactions"]
         
         # Create popup window
         self.root = tk.Toplevel(parent_window)
@@ -152,24 +150,13 @@ class WalletScreen:
         self.create_transaction_list()
         
         # Add Money button (bottom)
-        if self.add_money_btn_img:
-            add_btn = tk.Button(
-                self.root, image=self.add_money_btn_img, border=0, relief="flat",
-                cursor="hand2", command=self.show_add_money_dialog,
-                borderwidth=0, highlightthickness=0, bg="#D2D2DF",
-                activebackground="#D2D2DF"
-            )
-            add_btn.image = self.add_money_btn_img
-            add_btn.place(x=19, y=840)
-        else:
-            # Fallback button
-            add_btn = tk.Button(
-                self.root, text="Add Money", font=("Arial", 14, "bold"),
-                bg="#3D5AFE", fg="white", border=0, relief="flat",
-                cursor="hand2", command=self.show_add_money_dialog,
-                width=35, height=2
-            )
-            add_btn.place(x=214, y=860, anchor="center")
+        add_btn = tk.Button(
+            self.root, text="➕ Add Money", font=("Arial", 14, "bold"),
+            bg="#3D5AFE", fg="white", border=0, relief="flat",
+            cursor="hand2", command=self.show_add_money_dialog,
+            width=35, height=2
+        )
+        add_btn.place(x=214, y=860, anchor="center")
     
     def create_rounded_rect_on_canvas(self, canvas, x1, y1, x2, y2, radius, **kwargs):
         """Create a rounded rectangle on a canvas"""
@@ -413,29 +400,33 @@ class WalletScreen:
                     messagebox.showerror("Invalid Amount", "Please enter a positive amount")
                     return
                 
-                # Add money
-                self.balance += amount
-                self.balance_label.config(text=f"₱{self.balance}")
+                # Add money to database
+                success, message = add_wallet_funds_db(amount)
                 
-                # Add to transaction history
-                new_transaction = {
-                    "type": "deposit",
-                    "amount": amount,
-                    "by": "user",
-                    "date": datetime.now().strftime("%d %b %I:%M %p")
-                }
-                self.transaction_history.insert(0, new_transaction)
-                
-                # Refresh transaction list
-                for widget in self.scrollable_frame.winfo_children():
-                    widget.destroy()
-                self.populate_transactions()
-                
-                # Close popup
-                popup.destroy()
-                
-                messagebox.showinfo("Success ✓", f"₱{amount} added successfully to your wallet!")
-                
+                if success:
+                    # Update local balance
+                    self.balance += amount
+                    self.balance_label.config(text=f"₱{self.balance}")
+                    
+                    # Add to transaction history
+                    new_transaction = {
+                        "type": "deposit",
+                        "amount": amount,
+                        "by": "user",
+                        "date": datetime.now().strftime("%d %b %I:%M %p")
+                    }
+                    self.transaction_history.insert(0, new_transaction)
+                    
+                    # Refresh transaction list
+                    for widget in self.scrollable_frame.winfo_children():
+                        widget.destroy()
+                    self.populate_transactions()
+                    
+                    # Close popup
+                    popup.destroy()
+                    
+                    messagebox.showinfo("Success ✓", message)
+                    
             except ValueError:
                 messagebox.showerror("Invalid Amount", "Please enter a valid number")
         

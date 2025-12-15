@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import Canvas, messagebox, Scrollbar
 from PIL import Image, ImageTk
 import os
+from functions import get_user_vouchers_db
+import config
 
 class VoucherScreen:
     def __init__(self, parent_window, payment_screen=None):
@@ -12,64 +14,48 @@ class VoucherScreen:
         self.window_width = 428
         self.window_height = 926
         
-        # Sample voucher data
-        self.vouchers = [
-            {
-                "code": "SAVE20",
-                "title": "20% Off Your Ride",
-                "description": "Get 20% discount on your next ride",
-                "discount": "20%",
-                "discount_value": 20,
-                "min_fare": 100,
-                "expiry": "31/12/2024",
-                "status": "Active",
-                "type": "percentage"
-            },
-            {
-                "code": "FIRST50",
-                "title": "₱50 Off First Ride",
-                "description": "New user exclusive - ₱50 off",
-                "discount": "₱50",
-                "discount_value": 50,
-                "min_fare": 150,
-                "expiry": "31/01/2025",
-                "status": "Active",
-                "type": "fixed"
-            },
-            {
-                "code": "HALFOFF",
-                "title": "50% Discount",
-                "description": "Half price on rides above ₱200",
-                "discount": "50%",
-                "discount_value": 50,
-                "min_fare": 200,
-                "expiry": "15/12/2024",
-                "status": "Active",
-                "type": "percentage"
-            },
-            {
-                "code": "WEEKEND25",
-                "title": "Weekend Special",
-                "description": "25% off on weekend rides",
-                "discount": "25%",
-                "discount_value": 25,
-                "min_fare": 80,
-                "expiry": "20/12/2024",
-                "status": "Active",
-                "type": "percentage"
-            },
-            {
-                "code": "FREESHIP",
-                "title": "Free Ride Up To ₱100",
-                "description": "First ride free (max ₱100)",
-                "discount": "₱100",
-                "discount_value": 100,
-                "min_fare": 0,
-                "expiry": "10/12/2024",
-                "status": "Expired",
-                "type": "fixed"
-            }
-        ]
+        # Get voucher data from database
+        db_vouchers = get_user_vouchers_db()
+        
+        # Use database data if available, otherwise use sample data
+        if db_vouchers:
+            self.vouchers = db_vouchers
+        else:
+            self.vouchers = [
+                {
+                    "code": "SAVE20",
+                    "title": "20% Off Your Ride",
+                    "description": "Get 20% discount on your next ride",
+                    "discount": "20%",
+                    "discount_value": 20,
+                    "min_fare": 100,
+                    "expiry": "31/12/2024",
+                    "status": "Active",
+                    "type": "percentage"
+                },
+                {
+                    "code": "FIRST50",
+                    "title": "₱50 Off First Ride",
+                    "description": "New user exclusive - ₱50 off",
+                    "discount": "₱50",
+                    "discount_value": 50,
+                    "min_fare": 150,
+                    "expiry": "31/01/2025",
+                    "status": "Active",
+                    "type": "fixed"
+                },
+                {
+                    "code": "HALFOFF",
+                    "title": "50% Discount",
+                    "description": "Half price on rides above ₱200",
+                    "discount": "50%",
+                    "discount_value": 50,
+                    "min_fare": 200,
+                    "expiry": "15/12/2024",
+                    "status": "Active",
+                    "type": "percentage"
+                }
+            ]
         
         # Create popup window
         self.root = tk.Toplevel(parent_window)
@@ -429,7 +415,7 @@ class VoucherScreen:
             item_canvas.bind("<Leave>", on_leave)
     
     def use_voucher(self, voucher):
-        """Use/Apply voucher - UPDATED to integrate with payment"""
+        """Use/Apply voucher"""
         # If opened from payment screen, apply directly
         if self.payment_screen:
             self.apply_voucher_to_payment(voucher)

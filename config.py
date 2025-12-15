@@ -65,3 +65,16 @@ PAGE_LOCATION = 4
 PAGE_LOGIN = 5
 PAGE_SIGNUP = 6
 PAGE_HOME = 7
+
+# Database Settings (NEW)
+DB_HOST = "localhost"
+DB_NAME = "quickcab_db"
+DB_USER = "root"  # Change to 'quickcab_app' when ready
+DB_PASSWORD = ""  # Set your MariaDB root password here
+DB_PORT = 3306
+
+# Session management (NEW)
+CURRENT_USER_ID = None
+CURRENT_USERNAME = None
+CURRENT_USER_TYPE = None
+CURRENT_USER_FULLNAME = None

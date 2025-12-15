@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import Canvas, messagebox, Scrollbar
 from PIL import Image, ImageTk
 import os
-from datetime import datetime, timedelta
+from functions import get_user_rides_db
+import config
 
 class MyRidesScreen:
     def __init__(self, parent_window):
@@ -12,79 +13,55 @@ class MyRidesScreen:
         self.window_width = 428
         self.window_height = 926
         
-        # Sample ride history data
-        self.rides = [
-            {
-                "id": "QC-2024-001",
-                "date": "02/05/2022",
-                "time": "02:30 PM",
-                "from": "M.Roxas Ave cor C.M Recto Ave, Davao City",
-                "to": "DPT Bldg, Ma-A Talomo, Davao City",
-                "distance": "5.2 km",
-                "duration": "15 mins",
-                "fare": 250,
-                "vehicle": "Sedan",
-                "driver": "Juan Dela Cruz",
-                "rating": 5,
-                "status": "Completed"
-            },
-            {
-                "id": "QC-2024-002",
-                "date": "08/05/2022",
-                "time": "09:15 AM",
-                "from": "M.Roxas Ave cor C.M Recto Ave, Davao City",
-                "to": "MacArthur Hwy, Matina Crossing Talomo, Davao City",
-                "distance": "3.8 km",
-                "duration": "12 mins",
-                "fare": 360,
-                "vehicle": "Sedan",
-                "driver": "Maria Santos",
-                "rating": 4,
-                "status": "Cancel"
-            },
-            {
-                "id": "QC-2024-003",
-                "date": "08/05/2022",
-                "time": "06:45 PM",
-                "from": "Toril, Davao City",
-                "to": "Mintal, Davao City",
-                "distance": "7.1 km",
-                "duration": "20 mins",
-                "fare": 150,
-                "vehicle": "SUV",
-                "driver": "Pedro Reyes",
-                "rating": 5,
-                "status": "Cancelled"
-            },
-            {
-                "id": "QC-2024-004",
-                "date": "12/11/2024",
-                "time": "11:20 AM",
-                "from": "Gaisano Mall of Davao",
-                "to": "University of Mindanao",
-                "distance": "4.5 km",
-                "duration": "14 mins",
-                "fare": 110,
-                "vehicle": "Sedan",
-                "driver": "Ana Garcia",
-                "rating": 5,
-                "status": "Completed"
-            },
-            {
-                "id": "QC-2024-005",
-                "date": "11/11/2024",
-                "time": "03:00 PM",
-                "from": "Victoria Plaza Mall",
-                "to": "Davao Airport Terminal",
-                "distance": "8.3 km",
-                "duration": "25 mins",
-                "fare": 180,
-                "vehicle": "SUV",
-                "driver": "Carlos Mendoza",
-                "rating": 4,
-                "status": "Completed"
-            }
-        ]
+        # Get ride data from database
+        self.rides = get_user_rides_db()
+        
+        # If no rides from database, use sample data as fallback
+        if not self.rides:
+            self.rides = [
+                {
+                    "id": "QC-2024-001",
+                    "date": "02/05/2022",
+                    "time": "02:30 PM",
+                    "from": "M.Roxas Ave cor C.M Recto Ave, Davao City",
+                    "to": "DPT Bldg, Ma-A Talomo, Davao City",
+                    "distance": "5.2 km",
+                    "duration": "15 mins",
+                    "fare": 250,
+                    "vehicle": "Sedan",
+                    "driver": "Juan Dela Cruz",
+                    "rating": 5,
+                    "status": "Completed"
+                },
+                {
+                    "id": "QC-2024-002",
+                    "date": "08/05/2022",
+                    "time": "09:15 AM",
+                    "from": "M.Roxas Ave cor C.M Recto Ave, Davao City",
+                    "to": "MacArthur Hwy, Matina Crossing Talomo, Davao City",
+                    "distance": "3.8 km",
+                    "duration": "12 mins",
+                    "fare": 360,
+                    "vehicle": "Sedan",
+                    "driver": "Maria Santos",
+                    "rating": 4,
+                    "status": "Cancel"
+                },
+                {
+                    "id": "QC-2024-003",
+                    "date": "08/05/2022",
+                    "time": "06:45 PM",
+                    "from": "Toril, Davao City",
+                    "to": "Mintal, Davao City",
+                    "distance": "7.1 km",
+                    "duration": "20 mins",
+                    "fare": 150,
+                    "vehicle": "SUV",
+                    "driver": "Pedro Reyes",
+                    "rating": 5,
+                    "status": "Cancelled"
+                }
+            ]
         
         # Create popup window
         self.root = tk.Toplevel(parent_window)
@@ -278,7 +255,7 @@ class MyRidesScreen:
         )
         
         status_canvas.create_text(
-            43, 11, text=ride['status'],
+            43, 12, text=ride['status'],
             font=("Arial", 8, "bold"), fill=status_fg
         )
         

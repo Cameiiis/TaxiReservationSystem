@@ -3,6 +3,7 @@
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import config
+from database_manager import db
 
 # ==================== IMAGE LOADING ====================
 
@@ -61,7 +62,27 @@ def validate_login(username, password):
     if username == "Username:" or password == "Password:":
         return False, "Please enter username and password"
     
+    # Try database authentication first
+    if db.connect():
+        user = db.authenticate_user(username, password)
+        db.disconnect()
+        
+        if user:
+            # Store user session
+            config.CURRENT_USER_ID = user['user_id']
+            config.CURRENT_USERNAME = user['username']
+            config.CURRENT_USER_TYPE = user['user_type']
+            config.CURRENT_USER_FULLNAME = user['full_name']
+            
+            return True, f"Welcome, {user['full_name']}!"
+    
+    # Fallback to default credentials
     if username == config.DEFAULT_USERNAME and password == config.DEFAULT_PASSWORD:
+        config.CURRENT_USER_ID = 1
+        config.CURRENT_USERNAME = "admin"
+        config.CURRENT_USER_TYPE = "admin"
+        config.CURRENT_USER_FULLNAME = "Administrator"
+        
         return True, f"Welcome, {username}!"
     
     return False, "Invalid username or password"
@@ -71,8 +92,15 @@ def validate_signup(fullname, email, password):
     if fullname == "Full Name" or email == "Email" or password == "Password":
         return False, "Please fill in all fields"
     
-    # Add more validation here (email format, password strength, etc.)
-    return True, f"Account created for {fullname}!"
+    # Try database signup
+    if db.connect():
+        result = db.create_user(fullname, email, password)
+        db.disconnect()
+        
+        if result:
+            return True, f"Account created for {fullname}!"
+    
+    return False, "Could not create account. Please try again."
 
 # ==================== UTILITY FUNCTIONS ====================
 
@@ -95,6 +123,135 @@ def create_rounded_rect_points(x1, y1, x2, y2, radius):
         x1, y2-radius, x1, y2-radius, x1, y1+radius, x1, y1+radius, x1, y1
     ]
     return points
+
+# ==================== DATABASE FUNCTIONS ====================
+
+def get_wallet_data():
+    """Get wallet data for current user"""
+    if not config.CURRENT_USER_ID:
+        return {"balance": 2000, "transactions": []}
+    
+    if not db.connect():
+        return {"balance": 2000, "transactions": []}
+    
+    try:
+        balance = db.get_wallet_balance(config.CURRENT_USER_ID)
+        transactions = db.get_transaction_history(config.CURRENT_USER_ID, 10)
+        
+        # Format transactions for display
+        formatted_transactions = []
+        if transactions:
+            for trans in transactions:
+                formatted_transactions.append({
+                    "type": trans['transaction_type'],
+                    "amount": float(trans['amount']),
+                    "by": "admin" if trans['transaction_type'] == 'deposit' else "user",
+                    "date": trans['date_display']
+                })
+        
+        db.disconnect()
+        return {
+            "balance": float(balance) if balance else 2000,
+            "transactions": formatted_transactions
+        }
+        
+    except Exception as e:
+        print(f"Error getting wallet data: {e}")
+        db.disconnect()
+        return {"balance": 2000, "transactions": []}
+
+def add_wallet_funds_db(amount):
+    """Add funds to user's wallet"""
+    if not config.CURRENT_USER_ID:
+        return False, "No user logged in"
+    
+    if not db.connect():
+        return False, "Database connection failed"
+    
+    try:
+        new_balance = db.add_wallet_funds(config.CURRENT_USER_ID, amount, "Wallet top-up via app")
+        db.disconnect()
+        
+        if new_balance:
+            return True, f"Successfully added ₱{amount:.2f} to your wallet!"
+        else:
+            return False, "Failed to add funds"
+            
+    except Exception as e:
+        db.disconnect()
+        return False, f"Error: {str(e)}"
+
+def get_user_rides_db():
+    """Get user's ride history"""
+    if not config.CURRENT_USER_ID:
+        return []
+    
+    if not db.connect():
+        return []
+    
+    try:
+        rides = db.get_user_rides(config.CURRENT_USER_ID)
+        db.disconnect()
+        
+        formatted_rides = []
+        if rides:
+            for ride in rides:
+                formatted_rides.append({
+                    "id": ride['ride_code'],
+                    "date": ride['date'],
+                    "time": ride['time'],
+                    "from": ride['pickup_address'],
+                    "to": ride['destination_address'],
+                    "distance": f"{ride['distance_km']:.1f} km",
+                    "duration": "15 mins",
+                    "fare": float(ride['final_fare']),
+                    "vehicle": ride['ride_type'].capitalize(),
+                    "driver": "Juan Dela Cruz",
+                    "rating": 5,
+                    "status": ride['ride_status'].capitalize()
+                })
+        
+        return formatted_rides
+        
+    except Exception as e:
+        print(f"Error getting rides: {e}")
+        db.disconnect()
+        return []
+
+def get_user_vouchers_db():
+    """Get user's active vouchers"""
+    if not config.CURRENT_USER_ID:
+        return []
+    
+    if not db.connect():
+        return []
+    
+    try:
+        vouchers = db.get_user_vouchers(config.CURRENT_USER_ID)
+        db.disconnect()
+        
+        formatted_vouchers = []
+        if vouchers:
+            for voucher in vouchers:
+                discount_display = f"{voucher['discount_value']}%" if voucher['voucher_type'] == 'percentage' else f"₱{voucher['discount_value']}"
+                formatted_vouchers.append({
+                    "code": voucher['voucher_code'],
+                    "title": f"{discount_display} Discount",
+                    "description": voucher['description'],
+                    "discount": discount_display,
+                    "discount_value": float(voucher['discount_value']),
+                    "min_fare": float(voucher['min_fare']),
+                    "expiry": voucher['expiry'],
+                    "status": voucher['status'],
+                    "type": voucher['voucher_type']
+                })
+        
+        return formatted_vouchers
+        
+    except Exception as e:
+        print(f"Error getting vouchers: {e}")
+        db.disconnect()
+        return []
 
 # ==================== FEATURE HANDLERS ====================
 
@@ -165,8 +322,7 @@ def open_voucher_window(parent_window):
     """Open the Voucher screen"""
     try:
         from voucher_screen import VoucherScreen
-        # Open without payment screen reference (standalone mode)
-        voucher = VoucherScreen(parent_window, payment_screen=None)
+        voucher = VoucherScreen(parent_window)
         print("✅ Voucher window opened successfully!")
     except ImportError as e:
         messagebox.showerror(

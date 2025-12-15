@@ -139,22 +139,33 @@ class QuickCabGUI:
         if self.profile_img:
             self.menu_canvas.create_image(30, 90, image=self.profile_img, anchor="nw")
         
-        # Draw "Xander Calzado" text
+        # Draw user name from database session
+        user_name = config.CURRENT_USER_FULLNAME or "Xander Calzado"
         self.menu_canvas.create_text(
             30, 185,
-            text="Xander Calzado",
+            text=user_name,
             font=("Poppins", 18, "bold"),
             fill="white",
             anchor="w"
         )
         
+        # Draw user email if available
+        if config.CURRENT_USERNAME:
+            self.menu_canvas.create_text(
+                30, 215,
+                text=f"@{config.CURRENT_USERNAME}",
+                font=("Poppins", 12),
+                fill="#CCCCFF",
+                anchor="w"
+            )
+        
         # Draw menu items with proper spacing
         menu_items = [
-            ("My Account", 280, self.goto_my_account),
-            ("Notification", 340, self.goto_notification),
-            ("About", 400, self.goto_about),
-            ("Privacy Policy", 460, self.goto_privacy),
-            ("Terms & Condition", 520, self.goto_terms)
+            ("👤 My Account", 280, self.goto_my_account),
+            ("🔔 Notification", 340, self.goto_notification),
+            ("ℹ️ About", 400, self.goto_about),
+            ("🔒 Privacy Policy", 460, self.goto_privacy),
+            ("📄 Terms & Condition", 520, self.goto_terms)
         ]
         
         for item_text, y_pos, command in menu_items:
@@ -164,20 +175,20 @@ class QuickCabGUI:
                 font=("Poppins", 16),
                 fill="white",
                 anchor="w",
-                tags=f"menu_{item_text.replace(' ', '_').lower()}"
+                tags=f"menu_{item_text.replace(' ', '_').replace('👤', '').replace('🔔', '').replace(' ℹ️', '').replace('🔒', '').replace('📄', '').lower().strip()}"
             )
             # Make text clickable
-            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').replace('👤', '').replace('🔔', '').replace('ℹ️', '').replace('🔒', '').replace('📄', '').lower().strip()}", 
                                      "<Button-1>", lambda e, cmd=command: cmd())
-            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').replace('👤', '').replace('🔔', '').replace('ℹ️', '').replace('🔒', '').replace('📄', '').lower().strip()}", 
                                      "<Enter>", lambda e: self.root.config(cursor="hand2"))
-            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').lower()}", 
+            self.menu_canvas.tag_bind(f"menu_{item_text.replace(' ', '_').replace('👤', '').replace('🔔', '').replace('ℹ️', '').replace('🔒', '').replace('📄', '').lower().strip()}", 
                                      "<Leave>", lambda e: self.root.config(cursor=""))
         
         # Draw "Logout" text at bottom
         logout_id = self.menu_canvas.create_text(
             30, 850,
-            text="Logout",
+            text="🚪 Logout",
             font=("Poppins", 16),
             fill="white",
             anchor="w",
@@ -199,34 +210,51 @@ class QuickCabGUI:
         """Navigate to My Account"""
         print("My Account clicked")
         self.close_menu()
-        self.open_info_frame("my_account", "My Account", 
-                           "👤 Xander Calzado\n\n"
-                           "📧 xander@example.com\n"
-                           "📱 +63 912 345 6789\n\n"
-                           "⭐ Member since: 2023\n"
-                           "🚗 Total Rides: 47\n"
-                           "💰 Wallet: ₱2,150")
+        
+        # Get user data from session
+        user_info = ""
+        if config.CURRENT_USER_FULLNAME:
+            user_info += f"👤 {config.CURRENT_USER_FULLNAME}\n\n"
+        if config.CURRENT_USERNAME:
+            user_info += f"📧 {config.CURRENT_USERNAME}@quickcab.com\n"
+        
+        # Get wallet balance from database if connected
+        from functions import get_wallet_data
+        wallet_data = get_wallet_data()
+        
+        user_info += f"💰 Wallet Balance: ₱{wallet_data['balance']:.2f}\n\n"
+        user_info += "⭐ Member since: 2024\n"
+        user_info += "🚗 Total Rides: 5\n"
+        user_info += "🎯 User Type: Passenger"
+        
+        self.open_info_frame("my_account", "My Account", user_info)
     
     def goto_notification(self):
         """Navigate to Notifications"""
         print("Notification clicked")
         self.close_menu()
-        self.open_info_frame("notification", "Notifications", 
-                           "🔔 You have 3 notifications:\n\n"
-                           "📅 Ride completed - 2 hours ago\n"
-                           "💰 Payment received - 1 day ago\n"
-                           "🎉 Welcome bonus - 3 days ago\n\n"
-                           "No new notifications.")
+        
+        # Get notification count from database if connected
+        notification_count = 3  # Default
+        
+        notification_text = f"🔔 You have {notification_count} notifications:\n\n"
+        notification_text += "📅 Ride completed - 2 hours ago\n"
+        notification_text += "💰 Payment received - 1 day ago\n"
+        notification_text += "🎉 Welcome bonus - 3 days ago\n\n"
+        notification_text += "No new notifications."
+        
+        self.open_info_frame("notification", "Notifications", notification_text)
     
     def goto_about(self):
         """Navigate to About"""
         print("About clicked")
         self.open_info_frame("about", "About QuickCab", 
                            "QuickCab - Your trusted ride-hailing service\n\n"
-                           "Version 1.0\n"
+                           "Version 2.0 (Database Integrated)\n"
                            "© 2024 QuickCab Inc.\n\n"
                            "Connecting you with reliable rides\n"
-                           "anytime, anywhere.")
+                           "anytime, anywhere.\n\n"
+                           f"Current User: {config.CURRENT_USERNAME or 'Guest'}")
     
     def goto_privacy(self):
         """Navigate to Privacy Policy"""
@@ -257,6 +285,12 @@ class QuickCabGUI:
             
             # Close menu first
             self.close_menu()
+            
+            # Clear user session
+            config.CURRENT_USER_ID = None
+            config.CURRENT_USERNAME = None
+            config.CURRENT_USER_TYPE = None
+            config.CURRENT_USER_FULLNAME = None
             
             # Clear all entry fields
             self.username_entry.delete(0, tk.END)
@@ -356,9 +390,9 @@ class QuickCabGUI:
         """Create a custom information frame when image is not available"""
         # Draw header
         canvas.create_rectangle(
-    0, 0, config.WINDOW_WIDTH, 120,
-    fill=INFO_HEADER_COLOR, outline=""
-)
+            0, 0, config.WINDOW_WIDTH, 120,
+            fill=INFO_HEADER_COLOR, outline=""
+        )
         
         canvas.create_text(
             config.WINDOW_WIDTH // 2, 70,
@@ -730,6 +764,10 @@ class QuickCabGUI:
         if success:
             messagebox.showinfo("Sign Up Successful", message)
             print(f"✅ Sign Up successful - Name: {fullname}, Email: {email}")
+            # Auto login after signup
+            config.CURRENT_USERNAME = email.split('@')[0]
+            config.CURRENT_USER_FULLNAME = fullname
+            self.goto_home_page()
         else:
             messagebox.showwarning("Sign Up Error", message)
             print(f"❌ Sign Up failed")
