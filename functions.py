@@ -115,7 +115,6 @@ def validate_signup(fullname, email, password):
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
         return False, "Please enter a valid email address"
     
-    # Strict password validation
     is_valid, message = validate_password_strength(password)
     if not is_valid:
         return False, message
@@ -128,36 +127,6 @@ def validate_signup(fullname, email, password):
             return True, f"Account created for {fullname}!"
     
     return False, "Could not create account. Please try again."
-
-def validate_reset_password(email, username, new_password):
-    """Validate password reset request"""
-    if email == "Email" or username == "Username" or new_password == "New Password":
-        return False, "Please fill in all fields"
-    
-    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-        return False, "Please enter a valid email address"
-    
-    # Strict password validation
-    is_valid, message = validate_password_strength(new_password)
-    if not is_valid:
-        return False, message
-    
-    # Check if using default admin account
-    if username == config.DEFAULT_USERNAME and email.lower() == "admin@quickcab.com":
-        # For demo purposes, allow password reset for default admin
-        return True, "Password reset successful! You can now login with your new password."
-    
-    # Try database password reset
-    if db.connect():
-        user = db.get_user_by_email_username(email, username)
-        if user:
-            result = db.update_password(user['user_id'], new_password)
-            db.disconnect()
-            if result:
-                return True, "Password reset successful! You can now login with your new password."
-        db.disconnect()
-    
-    return False, "Invalid email or username. Please check your credentials."
 
 # UTILITY FUNCTIONS
 
@@ -228,7 +197,7 @@ def add_wallet_funds_db(amount):
         db.disconnect()
         
         if new_balance:
-            return True, f"Successfully added ₱{amount:.2f} to your wallet!"
+            return True, f"Successfully added â‚±{amount:.2f} to your wallet!"
         else:
             return False, "Failed to add funds"
             
@@ -287,7 +256,7 @@ def get_user_vouchers_db():
         formatted_vouchers = []
         if vouchers:
             for voucher in vouchers:
-                discount_display = f"{voucher['discount_value']}%" if voucher['voucher_type'] == 'percentage' else f"₱{voucher['discount_value']}"
+                discount_display = f"{voucher['discount_value']}%" if voucher['voucher_type'] == 'percentage' else f"â‚±{voucher['discount_value']}"
                 formatted_vouchers.append({
                     "code": voucher['voucher_code'],
                     "title": f"{discount_display} Discount",
@@ -329,7 +298,7 @@ def open_car_booking_window(parent_window):
         from gui_screens import CarBookingFeature
         CarBookingFeature(parent_window)
     except ImportError:
-        messagebox.showinfo("Car Booking", "🚗 Car booking feature coming soon!")
+        messagebox.showinfo("Car Booking", "ðŸš— Car booking feature coming soon!")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open Car Booking window!\n\nError: {e}")
 

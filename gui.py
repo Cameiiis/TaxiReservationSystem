@@ -51,13 +51,10 @@ class QuickCabGUI:
         self.components['signup_btn'].config(command=self.goto_signup_page)
         self.components['signup_page_btn'].config(command=self.handle_signup_submit)
         self.components['signin_btn'].config(command=self.goto_login_page)
-        self.components['forgot_password_btn'].config(command=self.goto_forgot_password_page)
-        self.components['reset_password_btn'].config(command=self.handle_reset_password)
         self.components['menu_btn'].config(command=self.menu_manager.toggle)
         
         self.components['show_password_btn'].config(command=self.toggle_login_password)
         self.components['show_signup_password_btn'].config(command=self.toggle_signup_password)
-        self.components['show_reset_password_btn'].config(command=self.toggle_reset_password)
         
         self.bind_entry_events()
     
@@ -69,9 +66,6 @@ class QuickCabGUI:
             (self.components['fullname_entry'], "Full Name", False),
             (self.components['email_entry'], "Email", False),
             (self.components['signup_password_entry'], "Password", True),
-            (self.components['reset_email_entry'], "Email", False),
-            (self.components['reset_username_entry'], "Username", False),
-            (self.components['reset_new_password_entry'], "New Password", True),
         ]
         
         for entry, placeholder, is_password in entries:
@@ -89,11 +83,11 @@ class QuickCabGUI:
         
         if self.ui_components.password_visible:
             self.components['password_entry'].config(show="")
-            self.components['show_password_btn'].config(text="🙈")
+            self.components['show_password_btn'].config(text="ðŸ™ˆ")
         else:
             if self.components['password_entry'].get() != "Password:":
                 self.components['password_entry'].config(show="*")
-            self.components['show_password_btn'].config(text="👁")
+            self.components['show_password_btn'].config(text="ðŸ‘")
     
     def toggle_signup_password(self):
         """Toggle signup password visibility"""
@@ -101,23 +95,11 @@ class QuickCabGUI:
         
         if self.ui_components.signup_password_visible:
             self.components['signup_password_entry'].config(show="")
-            self.components['show_signup_password_btn'].config(text="🙈")
+            self.components['show_signup_password_btn'].config(text="ðŸ™ˆ")
         else:
             if self.components['signup_password_entry'].get() != "Password":
                 self.components['signup_password_entry'].config(show="*")
-            self.components['show_signup_password_btn'].config(text="👁")
-    
-    def toggle_reset_password(self):
-        """Toggle reset password visibility"""
-        self.ui_components.reset_password_visible = not self.ui_components.reset_password_visible
-        
-        if self.ui_components.reset_password_visible:
-            self.components['reset_new_password_entry'].config(show="")
-            self.components['show_reset_password_btn'].config(text="🙈")
-        else:
-            if self.components['reset_new_password_entry'].get() != "New Password":
-                self.components['reset_new_password_entry'].config(show="*")
-            self.components['show_reset_password_btn'].config(text="👁")
+            self.components['show_signup_password_btn'].config(text="ðŸ‘")
     
     def draw_page(self):
         """Draw the current page"""
@@ -142,9 +124,6 @@ class QuickCabGUI:
             elif self.current_page == config.PAGE_SIGNUP:
                 self.draw_signup_page()
             
-            elif self.current_page == config.PAGE_FORGOT_PASSWORD:
-                self.draw_forgot_password_page()
-            
             elif self.current_page == config.PAGE_HOME:
                 self.draw_home_page()
     
@@ -159,7 +138,6 @@ class QuickCabGUI:
         self.components['show_password_btn'].place(x=340, y=567, anchor="center")
         
         self.components['login_btn'].place(x=214, y=665, anchor="center")
-        self.components['forgot_password_btn'].place(x=214, y=730, anchor="center")
         self.components['signup_btn'].place(x=214, y=898, anchor="center")
     
     def draw_signup_page(self):
@@ -175,39 +153,6 @@ class QuickCabGUI:
         self.components['show_signup_password_btn'].place(x=340, y=497, anchor="center")
         
         self.components['signup_page_btn'].place(x=214, y=583, anchor="center")
-        self.components['signin_btn'].place(x=214, y=897, anchor="center")
-    
-    def draw_forgot_password_page(self):
-        """Draw forgot password / reset password page"""
-        # Draw background similar to signup (light gray/purple)
-        self.canvas.create_rectangle(0, 0, config.WINDOW_WIDTH, config.WINDOW_HEIGHT, 
-                                     fill="#C5C6D0", outline="")
-        
-        # Draw logo area at top
-        self.canvas.create_text(214, 100, text="QUICKCAB", 
-                               font=("Arial", 32, "bold"), fill="#3D5AFE")
-        
-        # Title
-        self.canvas.create_text(214, 180, text="Reset Password", 
-                               font=("Arial", 24, "bold"), fill="#333")
-        
-        # Input fields - rounded rectangles
-        self.create_rounded_rect(64, 250, 364, 295, 25, fill="white", outline="")
-        self.create_rounded_rect(64, 320, 364, 365, 25, fill="white", outline="")
-        self.create_rounded_rect(64, 390, 364, 435, 25, fill="white", outline="")
-        
-        # Place entry fields
-        self.components['reset_email_entry'].place(x=214, y=272, anchor="center")
-        self.components['reset_username_entry'].place(x=214, y=342, anchor="center")
-        self.components['reset_new_password_entry'].place(x=200, y=412, anchor="center")
-        
-        # Show/hide password button
-        self.components['show_reset_password_btn'].place(x=340, y=412, anchor="center")
-        
-        # Reset Password button
-        self.components['reset_password_btn'].place(x=214, y=505, anchor="center")
-        
-        # Back to login link
         self.components['signin_btn'].place(x=214, y=897, anchor="center")
     
     def draw_home_page(self):
@@ -266,11 +211,6 @@ class QuickCabGUI:
         self.current_page = config.PAGE_HOME
         self.draw_page()
     
-    def goto_forgot_password_page(self):
-        """Navigate to forgot password page"""
-        self.current_page = config.PAGE_FORGOT_PASSWORD
-        self.draw_page()
-    
     def handle_login(self):
         """Handle login"""
         username = self.components['username_entry'].get()
@@ -288,34 +228,6 @@ class QuickCabGUI:
             show_terms_popup(self.root, on_terms_accepted)
         else:
             messagebox.showerror("Login Failed", message)
-    
-    def handle_reset_password(self):
-        """Handle password reset"""
-        email = self.components['reset_email_entry'].get()
-        username = self.components['reset_username_entry'].get()
-        new_password = self.components['reset_new_password_entry'].get()
-        
-        success, message = functions.validate_reset_password(email, username, new_password)
-        
-        if success:
-            messagebox.showinfo("Password Reset Successful", message)
-            # Clear the fields
-            self.components['reset_email_entry'].delete(0, tk.END)
-            self.components['reset_email_entry'].insert(0, "Email")
-            self.components['reset_email_entry'].config(fg=config.GRAY_TEXT)
-            
-            self.components['reset_username_entry'].delete(0, tk.END)
-            self.components['reset_username_entry'].insert(0, "Username")
-            self.components['reset_username_entry'].config(fg=config.GRAY_TEXT)
-            
-            self.components['reset_new_password_entry'].delete(0, tk.END)
-            self.components['reset_new_password_entry'].insert(0, "New Password")
-            self.components['reset_new_password_entry'].config(fg=config.GRAY_TEXT, show="")
-            
-            # Navigate back to login
-            self.goto_login_page()
-        else:
-            messagebox.showerror("Password Reset Failed", message)
     
     def handle_signup_submit(self):
         """Handle signup with password validation"""
@@ -345,9 +257,6 @@ class QuickCabGUI:
                         entry.config(show="*")
                 elif entry == self.components['signup_password_entry']:
                     if not self.ui_components.signup_password_visible:
-                        entry.config(show="*")
-                elif entry == self.components['reset_new_password_entry']:
-                    if not self.ui_components.reset_password_visible:
                         entry.config(show="*")
     
     def on_entry_focus_out(self, event, placeholder, is_password):
