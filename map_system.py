@@ -284,7 +284,7 @@ class QuickCabMapSystem:
         back_btn.place(x=10, y=10, width=80, height=30)
 
         tk.Label(
-            frame, text="QuickCab",
+            frame, text="Map",
             bg="#1e40af", fg="white",
             font=("Arial", 13, "bold")
         ).pack(pady=12)

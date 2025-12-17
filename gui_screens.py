@@ -91,7 +91,7 @@ class MyAccountScreen(BaseInfoScreen):
         profile_canvas = Canvas(profile_frame, width=150, height=150, 
                                bg="#D2D2DF", highlightthickness=0)
         profile_canvas.pack()
-        profile_canvas.create_oval(10, 10, 140, 140, fill="white", width=3, outline="#3D5AFE")
+        profile_canvas.create_oval(9, 9, 140, 140, fill="white", width=3, outline="#D2D2DF")
         
         # Display profile image if loaded, otherwise show emoji
         if self.profile_img:
@@ -102,9 +102,9 @@ class MyAccountScreen(BaseInfoScreen):
         # Input fields with Xander Calzado data
         fields = [
             ("👤", "Xander Calzado"),
-            ("✉️", "xandercalzado@gmail.com"),
-            ("🔑", ""),
-            ("🎂", "")
+            ("📩", "xandercalzado@gmail.com"),
+            ("🔑", "*********"),
+            ("🎂", "July 8, 2006")
         ]
         
         for icon, placeholder in fields:
@@ -334,7 +334,7 @@ class CarBookingFeature:
         tk.Button(header, text="←", font=("Arial", 20), bg="#3D5AFE", fg="white",
                  border=0, cursor="hand2", command=self.window.destroy).place(x=15, y=40)
         
-        tk.Label(header, text="🚕 Reserve a Taxi", font=("Arial", 22, "bold"),
+        tk.Label(header, text="Reserve a Taxi", font=("Arial", 22, "bold"),
                 bg="#3D5AFE", fg="white").pack(pady=45)
         
         container = tk.Frame(self.window, bg="#F5F5F5")
@@ -354,7 +354,6 @@ class CarBookingFeature:
         info_banner = tk.Frame(scroll_frame, bg="#E3F2FD", highlightbackground="#3D5AFE", highlightthickness=2)
         info_banner.pack(fill="x", padx=20, pady=20)
         
-        tk.Label(info_banner, text="ℹ️", font=("Arial", 24), bg="#E3F2FD").pack(pady=(15, 5))
         tk.Label(info_banner, text="QuickCab Taxi Reservation", font=("Arial", 16, "bold"),
                 bg="#E3F2FD", fg="#3D5AFE").pack()
         tk.Label(info_banner, text="Choose your vehicle type and book instantly",
