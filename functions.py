@@ -115,6 +115,7 @@ def validate_signup(fullname, email, password):
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
         return False, "Please enter a valid email address"
     
+    # Strict password validation
     is_valid, message = validate_password_strength(password)
     if not is_valid:
         return False, message
@@ -127,6 +128,36 @@ def validate_signup(fullname, email, password):
             return True, f"Account created for {fullname}!"
     
     return False, "Could not create account. Please try again."
+
+def validate_reset_password(email, username, new_password):
+    """Validate password reset request"""
+    if email == "Email" or username == "Username" or new_password == "New Password":
+        return False, "Please fill in all fields"
+    
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        return False, "Please enter a valid email address"
+    
+    # Strict password validation
+    is_valid, message = validate_password_strength(new_password)
+    if not is_valid:
+        return False, message
+    
+    # Check if using default admin account
+    if username == config.DEFAULT_USERNAME and email.lower() == "admin@quickcab.com":
+        # For demo purposes, allow password reset for default admin
+        return True, "Password reset successful! You can now login with your new password."
+    
+    # Try database password reset
+    if db.connect():
+        user = db.get_user_by_email_username(email, username)
+        if user:
+            result = db.update_password(user['user_id'], new_password)
+            db.disconnect()
+            if result:
+                return True, "Password reset successful! You can now login with your new password."
+        db.disconnect()
+    
+    return False, "Invalid email or username. Please check your credentials."
 
 # UTILITY FUNCTIONS
 

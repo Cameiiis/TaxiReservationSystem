@@ -34,7 +34,9 @@ BUTTON_IMAGES = {
     'alr_have_acc': ("alr have acc.png", (250, 60)),
     'menu_button': ("menu button.png", (30, 20)),
     'menu_button_white': ("menu button white.png", (30, 20)),
-    'menu_panel': ("Left Menu page.png", (428, 926))
+    'menu_panel': ("Left Menu page.png", (428, 926)),
+    'forgot_password': ("Forgot Password Button.png", (280, 70)),
+    'reset_password_button': ("RESET PASSWORD BUTTON.png", (300, 75))
 }
 
 HOME_ICONS = {
@@ -55,8 +57,8 @@ HOME_ICON_POSITIONS = [
 ]
 
 # Authentication
-DEFAULT_USERNAME = "admin"
-DEFAULT_PASSWORD = "admin123"
+DEFAULT_USERNAME = "Admin"
+DEFAULT_PASSWORD = "Admin123@"
 
 # Page Indices
 PAGE_OPENING = 0
@@ -65,6 +67,7 @@ PAGE_LOCATION = 4
 PAGE_LOGIN = 5
 PAGE_SIGNUP = 6
 PAGE_HOME = 7
+PAGE_FORGOT_PASSWORD = 8
 
 # Database Settings
 DB_HOST = "localhost"
