@@ -102,9 +102,9 @@ class MyAccountScreen(BaseInfoScreen):
         # Input fields with Xander Calzado data
         fields = [
             ("👤", "Xander Calzado"),
-            ("✉️", "xandercalzado@gmail.com"),
-            ("🔑", ""),
-            ("🎂", "")
+            ("📩", "xandercalzado@gmail.com"),
+            ("🔑", "*********"),
+            ("🎂", "July 8, 2006")
         ]
         
         for icon, placeholder in fields:
@@ -249,7 +249,7 @@ class NotificationScreen(BaseInfoScreen):
             self.create_notification_card(content_frame, notif)
         
         if not notifications:
-            tk.Label(content_frame, text="📭", font=("Arial", 48),
+            tk.Label(content_frame, text="🔭", font=("Arial", 48),
                     bg="white", fg="#CCC").pack(pady=100)
             tk.Label(content_frame, text="No notifications yet",
                     font=("Arial", 16), bg="white", fg="#999").pack()
@@ -285,18 +285,22 @@ class NotificationScreen(BaseInfoScreen):
 class CarBookingFeature:
     """Enhanced Car Booking Feature Window"""
     
-    def __init__(self, root):
+    def __init__(self, root, menu_manager=None):
         self.root = root
+        self.menu_manager = menu_manager
         self.window = tk.Toplevel(root)
         self.window.title("Reserve a Taxi")
         self.window.geometry(f"{config.WINDOW_WIDTH}x{config.WINDOW_HEIGHT}")
         self.window.resizable(False, False)
-        self.window.configure(bg="#F5F5F5")
+        self.window.configure(bg="#D2D2DF")
         
         self.vehicle_images = {}
+        self.undo_btn_img = None
         self.load_vehicle_images()
+        self.load_undo_button()
         
         self.center_window()
+        self.window.protocol("WM_DELETE_WINDOW", self.back_to_home)
         self.setup_ui()
     
     def center_window(self):
@@ -304,6 +308,21 @@ class CarBookingFeature:
         x = (self.window.winfo_screenwidth() // 2) - (config.WINDOW_WIDTH // 2)
         y = (self.window.winfo_screenheight() // 2) - (config.WINDOW_HEIGHT // 2)
         self.window.geometry(f"+{x}+{y}")
+    
+    def back_to_home(self):
+        """Go back to home screen"""
+        self.window.destroy()
+    
+    def load_undo_button(self):
+        """Load the undo button image"""
+        try:
+            img_path = config.IMAGE_FOLDER + "undo button.png"
+            img = Image.open(img_path)
+            img = img.resize((70, 50), Image.Resampling.LANCZOS)
+            self.undo_btn_img = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Could not load undo button: {e}")
+            self.undo_btn_img = None
     
     def load_vehicle_images(self):
         """Load vehicle images"""
@@ -327,22 +346,31 @@ class CarBookingFeature:
             self.vehicle_images['suv'] = None
     
     def setup_ui(self):
-        header = tk.Frame(self.window, bg="#3D5AFE", height=120)
+        header = tk.Frame(self.window, bg="#D2D2DF", height=120)
         header.pack(fill="x")
         header.pack_propagate(False)
         
-        tk.Button(header, text="←", font=("Arial", 20), bg="#3D5AFE", fg="white",
-                 border=0, cursor="hand2", command=self.window.destroy).place(x=15, y=40)
+        tk.Label(header, text="Reserve a Taxi", font=("Arial", 22, "bold"),
+                bg="#D2D2DF", fg="black").place(x=214, y=60, anchor="center")
         
-        tk.Label(header, text="🚕 Reserve a Taxi", font=("Arial", 22, "bold"),
-                bg="#3D5AFE", fg="white").pack(pady=45)
+        # Add undo button at top-left - placed on window to overlay header
+        if self.undo_btn_img:
+            back_btn = tk.Button(
+                self.window, image=self.undo_btn_img,
+                border=0, relief="flat", cursor="hand2",
+                command=self.back_to_home, borderwidth=0,
+                highlightthickness=0, bg="#D2D2DF",
+                activebackground="#D2D2DF"
+            )
+            back_btn.image = self.undo_btn_img
+            back_btn.place(x=5, y=15)
         
-        container = tk.Frame(self.window, bg="#F5F5F5")
+        container = tk.Frame(self.window, bg="#D2D2DF")
         container.pack(fill="both", expand=True)
         
-        canvas = Canvas(container, bg="#F5F5F5", highlightthickness=0)
+        canvas = Canvas(container, bg="#D2D2DF", highlightthickness=0)
         scrollbar = Scrollbar(container, orient="vertical", command=canvas.yview)
-        scroll_frame = tk.Frame(canvas, bg="#F5F5F5")
+        scroll_frame = tk.Frame(canvas, bg="#D2D2DF")
         
         scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
@@ -350,15 +378,6 @@ class CarBookingFeature:
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        
-        info_banner = tk.Frame(scroll_frame, bg="#E3F2FD", highlightbackground="#3D5AFE", highlightthickness=2)
-        info_banner.pack(fill="x", padx=20, pady=20)
-        
-        tk.Label(info_banner, text="ℹ️", font=("Arial", 24), bg="#E3F2FD").pack(pady=(15, 5))
-        tk.Label(info_banner, text="QuickCab Taxi Reservation", font=("Arial", 16, "bold"),
-                bg="#E3F2FD", fg="#3D5AFE").pack()
-        tk.Label(info_banner, text="Choose your vehicle type and book instantly",
-                font=("Arial", 10), bg="#E3F2FD", fg="#666").pack(pady=(5, 15))
         
         vehicles = [
             {
@@ -385,7 +404,7 @@ class CarBookingFeature:
             self.create_vehicle_card(scroll_frame, vehicle)
         
         tk.Label(scroll_frame, text="📋 Booking Features", font=("Arial", 16, "bold"),
-                bg="#F5F5F5", fg="#333").pack(anchor="w", padx=20, pady=(20, 10))
+                bg="#D2D2DF", fg="#333").pack(anchor="w", padx=20, pady=(20, 10))
         
         features_frame = tk.Frame(scroll_frame, bg="white", highlightbackground="#E0E0E0", highlightthickness=1)
         features_frame.pack(fill="x", padx=20, pady=(0, 20))

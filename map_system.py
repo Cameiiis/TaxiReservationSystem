@@ -251,6 +251,7 @@ class QuickCabMapSystem:
         self.current_mode = "pickup"
         self.distance = 0
         self.active_popup = None
+        self.undo_btn_img = None
 
         self.root = tk.Toplevel(parent_window)
         self.root.title("QuickCab")
@@ -262,32 +263,57 @@ class QuickCabMapSystem:
         y = int((screen_height - window_height) / 2)
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.root.resizable(False, False)
+        self.root.configure(bg="#D2D2DF")
 
         parent_window.withdraw()
-
+        
+        self.load_undo_button()
         self.setup_header()
         self.setup_location_display()
         self.setup_map()
         self.setup_bottom_controls()
 
         self.root.protocol("WM_DELETE_WINDOW", self.go_back)
+    
+    def load_undo_button(self):
+        """Load the undo button image"""
+        try:
+            # Try importing config first
+            try:
+                import config
+                img_path = config.IMAGE_FOLDER + "undo button.png"
+            except:
+                img_path = "Python Frames/undo button.png"
+            
+            img = Image.open(img_path)
+            img = img.resize((70, 50), Image.Resampling.LANCZOS)
+            self.undo_btn_img = ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Could not load undo button: {e}")
+            self.undo_btn_img = None
 
     def setup_header(self):
-        frame = tk.Frame(self.root, bg="#1e40af", height=50)
+        frame = tk.Frame(self.root, bg="#D2D2DF", height=120)
         frame.pack(fill="x")
         frame.pack_propagate(False)
 
-        back_btn = RoundedButton(
-            frame, text="← Back", command=self.go_back,
-            bg_color="#1e40af", fg_color="white", bg="#1e40af", width=80
-        )
-        back_btn.place(x=10, y=10, width=80, height=30)
-
         tk.Label(
             frame, text="Map",
-            bg="#1e40af", fg="white",
-            font=("Arial", 13, "bold")
-        ).pack(pady=12)
+            bg="#D2D2DF", fg="black",
+            font=("Arial", 20, "bold")
+        ).place(x=214, y=60, anchor="center")
+        
+        # Add undo button at top-left - placed on root window to overlay header
+        if self.undo_btn_img:
+            back_btn = tk.Button(
+                self.root, image=self.undo_btn_img,
+                border=0, relief="flat", cursor="hand2",
+                command=self.go_back, borderwidth=0,
+                highlightthickness=0, bg="#D2D2DF",
+                activebackground="#D2D2DF"
+            )
+            back_btn.image = self.undo_btn_img
+            back_btn.place(x=5, y=15)
 
     def setup_location_display(self):
         frame = tk.Frame(self.root, bg="white")

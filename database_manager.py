@@ -190,7 +190,7 @@ class DatabaseManager:
         try:
             query = """
                 SELECT transaction_type, amount, balance_after, description,
-                       DATE_FORMAT(transaction_date, '%%d %%b %%I:%%i %%p') as date_display
+                       DATE_FORMAT(transaction_date, '%d %b %h:%i %p') as date_display
                 FROM wallet_transactions
                 WHERE user_id = %s
                 ORDER BY transaction_date DESC
@@ -240,8 +240,8 @@ class DatabaseManager:
             query = """
                 SELECT ride_id, ride_code, ride_type, pickup_address, destination_address,
                        distance_km, final_fare, ride_status, payment_method,
-                       DATE_FORMAT(booking_time, '%%m/%%d/%%Y') as date,
-                       DATE_FORMAT(booking_time, '%%h:%%i %%p') as time
+                       DATE_FORMAT(booking_time, '%m/%d/%Y') as date,
+                       DATE_FORMAT(booking_time, '%h:%i %p') as time
                 FROM rides
                 WHERE passenger_id = %s
                 ORDER BY booking_time DESC
@@ -306,7 +306,7 @@ class DatabaseManager:
             query = """
                 SELECT v.voucher_id, v.voucher_code, v.voucher_type, v.discount_value,
                        v.min_fare, v.description, v.voucher_status,
-                       DATE_FORMAT(v.expiry_date, '%%d/%%m/%%Y') as expiry,
+                       DATE_FORMAT(v.expiry_date, '%d/%m/%Y') as expiry,
                        CASE 
                            WHEN v.expiry_date < CURDATE() THEN 'Expired'
                            WHEN uv.times_used >= v.usage_limit THEN 'Used'
@@ -464,7 +464,7 @@ class DatabaseManager:
         try:
             query = """
                 SELECT notification_id, notification_type, title, message, is_read,
-                       DATE_FORMAT(created_at, '%%d %%b %%I:%%i %%p') as date_display
+                       DATE_FORMAT(created_at, '%d %b %h:%i %p') as date_display
                 FROM notifications
                 WHERE user_id = %s
                 ORDER BY created_at DESC

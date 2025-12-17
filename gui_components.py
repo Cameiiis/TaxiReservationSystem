@@ -17,6 +17,7 @@ class UIComponents:
         
         self.password_visible = False
         self.signup_password_visible = False
+        self.reset_password_visible = False
     
     def create_all_buttons(self):
         """Create all buttons"""
@@ -48,6 +49,17 @@ class UIComponents:
         
         self.components['menu_btn'] = self.create_menu_button()
         
+        # Forgot Password button
+        self.components['forgot_password_btn'] = self.create_image_button(
+            self.button_images.get('forgot_password'),
+            "Forgot Password?", is_link=True
+        )
+        
+        # Reset Password button
+        self.components['reset_password_btn'] = self.create_image_button(
+            self.button_images.get('reset_password_button'), "Reset Password"
+        )
+        
         return self.components
     
     def create_all_entries(self):
@@ -58,15 +70,22 @@ class UIComponents:
         self.components['email_entry'] = self.create_entry("Email")
         self.components['signup_password_entry'] = self.create_entry("Password", is_password=True)
         
+        # Forgot Password entries
+        self.components['reset_email_entry'] = self.create_entry("Email")
+        self.components['reset_username_entry'] = self.create_entry("Username")
+        self.components['new_password_entry'] = self.create_entry("New Password", is_password=True)
+        
+        # Password visibility buttons
         self.components['show_password_btn'] = self.create_show_password_button('login')
         self.components['show_signup_password_btn'] = self.create_show_password_button('signup')
+        self.components['show_reset_password_btn'] = self.create_show_password_button('reset')
         
         return self.components
     
     def create_show_password_button(self, form_type):
         """Create show/hide password button"""
         btn = tk.Button(
-            self.root, text="ðŸ‘", font=("Arial", 12),
+            self.root, text="🙈", font=("Arial", 12),
             bg="white", fg="#666", relief="flat", border=0,
             cursor="hand2", width=2, height=1,
             activebackground="white", activeforeground="#3D5AFE"
@@ -108,7 +127,7 @@ class UIComponents:
             )
         else:
             return tk.Button(
-                self.root, text="â˜°", font=("Arial", 20), border=0,
+                self.root, text="☰", font=("Arial", 20), border=0,
                 relief="flat", cursor="hand2",
                 bg=config.WINDOW_BG_COLOR, fg=config.PRIMARY_COLOR
             )

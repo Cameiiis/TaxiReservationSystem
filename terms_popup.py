@@ -120,12 +120,12 @@ def show_terms_popup(parent, on_accept_callback):
         decline_btn.place(x=10, y=20)
     
     accept_btn = tk.Button(
-        popup, text="Accept the terms & Condition", 
+        popup, text="Accept the Terms & Condition", 
         font=("Arial", 14, "bold"),
         bg="#cccccc", fg="white", border=0, relief="flat",
         width=30, height=2, state="disabled", cursor="arrow"
     )
-    accept_btn.place(x=214, y=900, anchor="center")
+    accept_btn.place(x=214, y=880, anchor="center")
     
     def update_button_state():
         """Enable/disable accept button based on checkbox"""
