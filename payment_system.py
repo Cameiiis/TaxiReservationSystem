@@ -1,5 +1,3 @@
-# payment_system.py - Payment Method Screen (FIXED - No Loading in Confirmation)
-
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -16,21 +14,18 @@ class PaymentMethodScreen:
         self.pickup_address = pickup_address
         self.destination_address = destination_address
         self.distance = distance
-        self.pickup_coords = pickup_coords  # Store coordinates
-        self.destination_coords = destination_coords  # Store coordinates
+        self.pickup_coords = pickup_coords
+        self.destination_coords = destination_coords
         self.selected_payment = "cash"
         self.coupon_applied = False
         self.applied_voucher_code = None
         
-        # Window dimensions
         self.window_width = 428
         self.window_height = 926
         
-        # Create popup window
         self.root = tk.Toplevel(parent_window)
         self.root.title("Payment Method")
         
-        # Center window
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = int((screen_width - self.window_width) / 2)
@@ -38,19 +33,13 @@ class PaymentMethodScreen:
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
         self.root.resizable(False, False)
         
-        # Load images
         self.load_images()
         
-        # Setup UI
         self.setup_ui()
         
-        # Handle window close
         self.root.protocol("WM_DELETE_WINDOW", self.go_back)
-        
-        print("✅ Payment Method Screen opened")
     
     def load_images(self):
-        """Load all payment screen images"""
         frames_folder = "Python Frames"
         
         self.payment_frame_img = None
@@ -112,10 +101,9 @@ class PaymentMethodScreen:
                 self.book_ride_btn_img = ImageTk.PhotoImage(img)
                 
         except Exception as e:
-            print(f"Error loading payment images: {e}")
+            pass
     
     def setup_ui(self):
-        """Setup the payment screen UI"""
         self.canvas = tk.Canvas(
             self.root, width=self.window_width, height=self.window_height,
             bg="#C5C6D0", highlightthickness=0
@@ -315,12 +303,10 @@ class PaymentMethodScreen:
         messagebox.showinfo("Payment Method Selected", f"{payment_methods.get(method, method.title())} selected")
     
     def confirm_payment(self):
-        """FIXED: Show coordinates instead of 'Loading...' in confirmation"""
         if not config.CURRENT_USER_ID:
             messagebox.showerror("Not Logged In", "Please log in to book a ride")
             return
         
-        # Fix: Use coordinates as fallback if addresses are still loading
         display_pickup = self.pickup_address
         display_destination = self.destination_address
         
@@ -357,7 +343,6 @@ class PaymentMethodScreen:
                 messagebox.showerror("Booking Failed", "Could not save your booking. Please try again.")
     
     def save_ride_to_database(self):
-        """Save ride to database with PENDING status"""
         try:
             if not db.connect():
                 return False
@@ -384,12 +369,10 @@ class PaymentMethodScreen:
             db.disconnect()
             
             if ride_code:
-                print(f"✅ Ride saved: {ride_code}")
                 return True
             return False
                 
         except Exception as e:
-            print(f"❌ Error saving ride: {e}")
             if db.connection and db.connection.is_connected():
                 db.disconnect()
             return False

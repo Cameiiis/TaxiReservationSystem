@@ -26,8 +26,7 @@ class DatabaseManager:
                 self.cursor = self.connection.cursor(dictionary=True)
                 return True
                 
-        except Error as e:
-            print(f"❌ Database connection error: {e}")
+        except Error:
             return False
     
     def disconnect(self):
@@ -41,7 +40,7 @@ class DatabaseManager:
         """Hash password using SHA-256"""
         return hashlib.sha256(password.encode()).hexdigest()
     
-    # ==================== USER MANAGEMENT ====================
+    # USER MANAGEMENT
     
     def authenticate_user(self, username, password):
         """Authenticate user login"""
@@ -58,7 +57,6 @@ class DatabaseManager:
             user = self.cursor.fetchone()
             
             if user:
-                # Update last login
                 update_query = "UPDATE users SET last_login = NOW() WHERE user_id = %s"
                 self.cursor.execute(update_query, (user['user_id'],))
                 self.connection.commit()
@@ -67,14 +65,12 @@ class DatabaseManager:
             
             return None
             
-        except Error as e:
-            print(f"❌ Authentication error: {e}")
+        except Error:
             return None
     
     def create_user(self, full_name, email, password, username=None, user_type='passenger'):
         """Create new user account"""
         try:
-            # Generate username from email if not provided
             if not username:
                 username = email.split('@')[0]
             
@@ -90,8 +86,7 @@ class DatabaseManager:
             
             return True
             
-        except Error as e:
-            print(f"❌ User creation error: {e}")
+        except Error:
             return False
     
     def get_user_info(self, user_id):
@@ -107,11 +102,10 @@ class DatabaseManager:
             self.cursor.execute(query, (user_id,))
             return self.cursor.fetchone()
             
-        except Error as e:
-            print(f"❌ Error fetching user info: {e}")
+        except Error:
             return None
     
-    # ==================== WALLET MANAGEMENT ====================
+    # WALLET MANAGEMENT
     
     def get_wallet_balance(self, user_id):
         """Get user's wallet balance"""
@@ -122,14 +116,12 @@ class DatabaseManager:
             
             return result['balance'] if result else 0.00
             
-        except Error as e:
-            print(f"❌ Error fetching wallet balance: {e}")
+        except Error:
             return 0.00
     
     def add_wallet_funds(self, user_id, amount, description="Wallet top-up"):
         """Add funds to user's wallet"""
         try:
-            # Get current balance and wallet_id
             query = "SELECT wallet_id, balance FROM wallet WHERE user_id = %s"
             self.cursor.execute(query, (user_id,))
             wallet = self.cursor.fetchone()
@@ -138,14 +130,12 @@ class DatabaseManager:
                 return None
             
             wallet_id = wallet['wallet_id']
-            old_balance = float(wallet['balance'])  # Convert Decimal to float
+            old_balance = float(wallet['balance'])
             new_balance = old_balance + float(amount)
             
-            # Update wallet balance
             update_query = "UPDATE wallet SET balance = %s WHERE wallet_id = %s"
             self.cursor.execute(update_query, (new_balance, wallet_id))
             
-            # Record transaction
             trans_query = """
                 INSERT INTO wallet_transactions 
                 (wallet_id, user_id, transaction_type, amount, balance_before, balance_after, description)
@@ -156,15 +146,13 @@ class DatabaseManager:
             self.connection.commit()
             return new_balance
             
-        except Error as e:
-            print(f"❌ Error adding wallet funds: {e}")
+        except Error:
             self.connection.rollback()
             return None
     
     def deduct_wallet_funds(self, user_id, amount, description="Payment"):
         """Deduct funds from user's wallet"""
         try:
-            # Get current balance and wallet_id
             query = "SELECT wallet_id, balance FROM wallet WHERE user_id = %s"
             self.cursor.execute(query, (user_id,))
             wallet = self.cursor.fetchone()
@@ -173,20 +161,16 @@ class DatabaseManager:
                 return None
             
             wallet_id = wallet['wallet_id']
-            old_balance = float(wallet['balance'])  # Convert Decimal to float
+            old_balance = float(wallet['balance'])
             
-            # Check sufficient balance
             if old_balance < float(amount):
-                print("❌ Insufficient wallet balance")
                 return None
             
             new_balance = old_balance - float(amount)
             
-            # Update wallet balance
             update_query = "UPDATE wallet SET balance = %s WHERE wallet_id = %s"
             self.cursor.execute(update_query, (new_balance, wallet_id))
             
-            # Record transaction
             trans_query = """
                 INSERT INTO wallet_transactions 
                 (wallet_id, user_id, transaction_type, amount, balance_before, balance_after, description)
@@ -197,8 +181,7 @@ class DatabaseManager:
             self.connection.commit()
             return new_balance
             
-        except Error as e:
-            print(f"❌ Error deducting wallet funds: {e}")
+        except Error:
             self.connection.rollback()
             return None
     
@@ -217,21 +200,18 @@ class DatabaseManager:
             self.cursor.execute(query, (user_id, limit))
             return self.cursor.fetchall()
             
-        except Error as e:
-            print(f"❌ Error fetching transaction history: {e}")
+        except Error:
             return []
     
-    # ==================== RIDE MANAGEMENT ====================
+    # RIDE MANAGEMENT
     
     def create_ride(self, passenger_id, ride_type, pickup_lat, pickup_lon, pickup_addr,
                    dest_lat, dest_lon, dest_addr, distance_km, fare, payment_method):
         """Create a new ride booking"""
         try:
-            # Generate unique ride code
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             ride_code = f"QC-{timestamp[-6:]}"
             
-            # Calculate fare breakdown
             base_fare = 40 if ride_type == 'sedan' else 60
             distance_fare = fare - base_fare
             
@@ -250,8 +230,7 @@ class DatabaseManager:
             self.connection.commit()
             return ride_code
             
-        except Error as e:
-            print(f"❌ Error creating ride: {e}")
+        except Error:
             self.connection.rollback()
             return None
     
@@ -272,8 +251,7 @@ class DatabaseManager:
             self.cursor.execute(query, (user_id, limit))
             return self.cursor.fetchall()
             
-        except Error as e:
-            print(f"❌ Error fetching rides: {e}")
+        except Error:
             return []
     
     def update_ride_status(self, ride_id, new_status):
@@ -284,14 +262,12 @@ class DatabaseManager:
             self.connection.commit()
             return True
             
-        except Error as e:
-            print(f"❌ Error updating ride status: {e}")
+        except Error:
             return False
     
     def complete_ride(self, ride_id, rating=None, review=None):
         """Complete a ride and process payment"""
         try:
-            # Get ride details
             query = "SELECT passenger_id, final_fare, payment_method FROM rides WHERE ride_id = %s"
             self.cursor.execute(query, (ride_id,))
             ride = self.cursor.fetchone()
@@ -299,7 +275,6 @@ class DatabaseManager:
             if not ride:
                 return False
             
-            # If payment method is wallet, deduct funds
             if ride['payment_method'] == 'wallet':
                 result = self.deduct_wallet_funds(
                     ride['passenger_id'], 
@@ -309,7 +284,6 @@ class DatabaseManager:
                 if not result:
                     return False
             
-            # Update ride status
             update_query = """
                 UPDATE rides 
                 SET ride_status = 'completed', end_time = NOW(), rating = %s, review_comment = %s
@@ -320,12 +294,11 @@ class DatabaseManager:
             
             return True
             
-        except Error as e:
-            print(f"❌ Error completing ride: {e}")
+        except Error:
             self.connection.rollback()
             return False
     
-    # ==================== VOUCHER MANAGEMENT ====================
+    # VOUCHER MANAGEMENT
     
     def get_user_vouchers(self, user_id):
         """Get user's available vouchers"""
@@ -348,8 +321,7 @@ class DatabaseManager:
             self.cursor.execute(query, (user_id,))
             return self.cursor.fetchall()
             
-        except Error as e:
-            print(f"❌ Error fetching vouchers: {e}")
+        except Error:
             return []
     
     def validate_voucher(self, voucher_code, user_id, fare_amount):
@@ -372,15 +344,12 @@ class DatabaseManager:
             if not voucher:
                 return None, "Invalid or expired voucher"
             
-            # Check usage limit
             if voucher['times_used'] >= voucher['usage_limit']:
                 return None, "Voucher usage limit reached"
             
-            # Check minimum fare
             if fare_amount < voucher['min_fare']:
                 return None, f"Minimum fare of ₱{voucher['min_fare']} required"
             
-            # Calculate discount
             if voucher['voucher_type'] == 'percentage':
                 discount = fare_amount * (voucher['discount_value'] / 100)
                 if voucher['max_discount'] and discount > voucher['max_discount']:
@@ -390,14 +359,12 @@ class DatabaseManager:
             
             return discount, None
             
-        except Error as e:
-            print(f"❌ Error validating voucher: {e}")
+        except Error:
             return None, "Error validating voucher"
     
     def use_voucher(self, voucher_code, user_id, ride_id, discount_applied):
         """Mark voucher as used for a ride"""
         try:
-            # Get voucher ID
             query = "SELECT voucher_id FROM vouchers WHERE voucher_code = %s"
             self.cursor.execute(query, (voucher_code,))
             result = self.cursor.fetchone()
@@ -407,7 +374,6 @@ class DatabaseManager:
             
             voucher_id = result['voucher_id']
             
-            # Update usage count
             update_query = """
                 UPDATE user_vouchers 
                 SET times_used = times_used + 1, last_used = NOW()
@@ -415,7 +381,6 @@ class DatabaseManager:
             """
             self.cursor.execute(update_query, (user_id, voucher_id))
             
-            # Record voucher usage for ride
             insert_query = """
                 INSERT INTO ride_vouchers (ride_id, voucher_id, discount_applied)
                 VALUES (%s, %s, %s)
@@ -425,15 +390,13 @@ class DatabaseManager:
             self.connection.commit()
             return True
             
-        except Error as e:
-            print(f"❌ Error using voucher: {e}")
+        except Error:
             self.connection.rollback()
             return False
     
     def assign_voucher_to_user(self, user_id, voucher_code):
         """Assign a voucher to a user"""
         try:
-            # Get voucher ID
             query = "SELECT voucher_id FROM vouchers WHERE voucher_code = %s"
             self.cursor.execute(query, (voucher_code,))
             result = self.cursor.fetchone()
@@ -443,7 +406,6 @@ class DatabaseManager:
             
             voucher_id = result['voucher_id']
             
-            # Assign to user
             insert_query = """
                 INSERT INTO user_vouchers (user_id, voucher_id, times_used)
                 VALUES (%s, %s, 0)
@@ -454,11 +416,10 @@ class DatabaseManager:
             
             return True
             
-        except Error as e:
-            print(f"❌ Error assigning voucher: {e}")
+        except Error:
             return False
     
-    # ==================== DRIVER MANAGEMENT ====================
+    # DRIVER MANAGEMENT
     
     def get_available_drivers(self, ride_type):
         """Get available drivers for ride type"""
@@ -478,11 +439,10 @@ class DatabaseManager:
             self.cursor.execute(query, (ride_type,))
             return self.cursor.fetchall()
             
-        except Error as e:
-            print(f"❌ Error fetching drivers: {e}")
+        except Error:
             return []
     
-    # ==================== NOTIFICATIONS ====================
+    # NOTIFICATIONS
     
     def create_notification(self, user_id, notification_type, title, message):
         """Create a notification for user"""
@@ -496,8 +456,7 @@ class DatabaseManager:
             self.connection.commit()
             return True
             
-        except Error as e:
-            print(f"❌ Error creating notification: {e}")
+        except Error:
             return False
     
     def get_user_notifications(self, user_id, limit=10):
@@ -515,8 +474,7 @@ class DatabaseManager:
             self.cursor.execute(query, (user_id, limit))
             return self.cursor.fetchall()
             
-        except Error as e:
-            print(f"❌ Error fetching notifications: {e}")
+        except Error:
             return []
     
     def mark_notification_read(self, notification_id):
@@ -527,11 +485,9 @@ class DatabaseManager:
             self.connection.commit()
             return True
             
-        except Error as e:
-            print(f"❌ Error marking notification as read: {e}")
+        except Error:
             return False
 
 
-# ⚠️ CRITICAL: This line creates the global instance
-# DO NOT DELETE THIS LINE!
+# Create global instance
 db = DatabaseManager()

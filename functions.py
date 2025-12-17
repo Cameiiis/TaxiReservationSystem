@@ -1,11 +1,12 @@
-# functions.py - All Business Logic and Helper Functions
+# functions.py - Business Logic and Helper Functions
 
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import config
 from database_manager import db
+import re
 
-# ==================== IMAGE LOADING ====================
+# IMAGE LOADING
 
 def load_image(path, size):
     """Load and resize an image"""
@@ -13,10 +14,8 @@ def load_image(path, size):
         img = Image.open(path)
         img = img.resize(size, Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(img)
-        print(f"✅ Loaded: {path}")
         return img, photo
-    except Exception as e:
-        print(f"❌ Error loading {path}: {e}")
+    except Exception:
         placeholder = Image.new('RGB', size, color=config.WINDOW_BG_COLOR)
         return placeholder, ImageTk.PhotoImage(placeholder)
 
@@ -55,20 +54,42 @@ def load_all_home_icons():
     
     return home_icons
 
-# ==================== AUTHENTICATION ====================
+# PASSWORD VALIDATION
+
+def validate_password_strength(password):
+    """
+    Validate password meets requirements:
+    - At least 8 characters
+    - Must start with uppercase letter
+    - Must contain at least one number
+    - Must contain at least one special symbol
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    
+    if not password[0].isupper():
+        return False, "Password must start with a capital letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
+    
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
+        return False, "Password must contain at least one special symbol (!@#$%^&*)"
+    
+    return True, "Password is strong"
+
+# AUTHENTICATION
 
 def validate_login(username, password):
     """Validate login credentials"""
     if username == "Username:" or password == "Password:":
         return False, "Please enter username and password"
     
-    # Try database authentication first
     if db.connect():
         user = db.authenticate_user(username, password)
         db.disconnect()
         
         if user:
-            # Store user session
             config.CURRENT_USER_ID = user['user_id']
             config.CURRENT_USERNAME = user['username']
             config.CURRENT_USER_TYPE = user['user_type']
@@ -76,7 +97,6 @@ def validate_login(username, password):
             
             return True, f"Welcome, {user['full_name']}!"
     
-    # Fallback to default credentials
     if username == config.DEFAULT_USERNAME and password == config.DEFAULT_PASSWORD:
         config.CURRENT_USER_ID = 1
         config.CURRENT_USERNAME = "admin"
@@ -88,11 +108,17 @@ def validate_login(username, password):
     return False, "Invalid username or password"
 
 def validate_signup(fullname, email, password):
-    """Validate signup form"""
+    """Validate signup form with password strength check"""
     if fullname == "Full Name" or email == "Email" or password == "Password":
         return False, "Please fill in all fields"
     
-    # Try database signup
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        return False, "Please enter a valid email address"
+    
+    is_valid, message = validate_password_strength(password)
+    if not is_valid:
+        return False, message
+    
     if db.connect():
         result = db.create_user(fullname, email, password)
         db.disconnect()
@@ -102,7 +128,7 @@ def validate_signup(fullname, email, password):
     
     return False, "Could not create account. Please try again."
 
-# ==================== UTILITY FUNCTIONS ====================
+# UTILITY FUNCTIONS
 
 def center_window(window, width, height):
     """Calculate centered window geometry"""
@@ -124,7 +150,7 @@ def create_rounded_rect_points(x1, y1, x2, y2, radius):
     ]
     return points
 
-# ==================== DATABASE FUNCTIONS ====================
+# DATABASE FUNCTIONS
 
 def get_wallet_data():
     """Get wallet data for current user"""
@@ -138,7 +164,6 @@ def get_wallet_data():
         balance = db.get_wallet_balance(config.CURRENT_USER_ID)
         transactions = db.get_transaction_history(config.CURRENT_USER_ID, 10)
         
-        # Format transactions for display
         formatted_transactions = []
         if transactions:
             for trans in transactions:
@@ -155,8 +180,7 @@ def get_wallet_data():
             "transactions": formatted_transactions
         }
         
-    except Exception as e:
-        print(f"Error getting wallet data: {e}")
+    except Exception:
         db.disconnect()
         return {"balance": 2000, "transactions": []}
 
@@ -213,8 +237,7 @@ def get_user_rides_db():
         
         return formatted_rides
         
-    except Exception as e:
-        print(f"Error getting rides: {e}")
+    except Exception:
         db.disconnect()
         return []
 
@@ -248,18 +271,17 @@ def get_user_vouchers_db():
         
         return formatted_vouchers
         
-    except Exception as e:
-        print(f"Error getting vouchers: {e}")
+    except Exception:
         db.disconnect()
         return []
 
-# ==================== FEATURE HANDLERS ====================
+# FEATURE HANDLERS
 
 def handle_home_icon_click(icon_name, parent_window):
     """Handle home page icon clicks"""
-    print(f"{icon_name.upper()} icon clicked!")
-    
-    if icon_name == 'map':
+    if icon_name == 'car':
+        open_car_booking_window(parent_window)
+    elif icon_name == 'map':
         open_map_window(parent_window)
     elif icon_name == 'payment':
         open_wallet_window(parent_window)
@@ -270,66 +292,52 @@ def handle_home_icon_click(icon_name, parent_window):
     else:
         messagebox.showinfo("Feature", f"{icon_name.replace('_', ' ').title()} feature coming soon!")
 
+def open_car_booking_window(parent_window):
+    """Open the Car Booking feature"""
+    try:
+        from gui_screens import CarBookingFeature
+        CarBookingFeature(parent_window)
+    except ImportError:
+        messagebox.showinfo("Car Booking", "🚗 Car booking feature coming soon!")
+    except Exception as e:
+        messagebox.showerror("QuickCab Error", f"Could not open Car Booking window!\n\nError: {e}")
+
 def open_map_window(parent_window):
     """Open the QuickCab map booking system"""
     try:
         from map_system import QuickCabMapSystem
-        map_system = QuickCabMapSystem(parent_window)
-        print("✅ QuickCab Map window opened successfully!")
+        QuickCabMapSystem(parent_window)
     except ImportError as e:
-        messagebox.showerror(
-            "QuickCab Error", 
-            f"Could not import map_system.py!\n\nMake sure map_system.py is in the same folder.\n\nError: {e}"
-        )
-        print(f"❌ Import error: {e}")
+        messagebox.showerror("QuickCab Error", f"Could not import map_system.py!\n\nError: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open map window!\n\nError: {e}")
-        print(f"❌ Error opening map: {e}")
 
 def open_wallet_window(parent_window):
     """Open the Wallet screen"""
     try:
         from wallet_screen import WalletScreen
-        wallet = WalletScreen(parent_window)
-        print("✅ Wallet window opened successfully!")
+        WalletScreen(parent_window)
     except ImportError as e:
-        messagebox.showerror(
-            "QuickCab Error", 
-            f"Could not import wallet_screen.py!\n\nMake sure wallet_screen.py is in the same folder.\n\nError: {e}"
-        )
-        print(f"❌ Import error: {e}")
+        messagebox.showerror("QuickCab Error", f"Could not import wallet_screen.py!\n\nError: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open wallet window!\n\nError: {e}")
-        print(f"❌ Error opening wallet: {e}")
 
 def open_my_rides_window(parent_window):
     """Open the My Rides screen"""
     try:
         from my_rides_screen import MyRidesScreen
-        my_rides = MyRidesScreen(parent_window)
-        print("✅ My Rides window opened successfully!")
+        MyRidesScreen(parent_window)
     except ImportError as e:
-        messagebox.showerror(
-            "QuickCab Error", 
-            f"Could not import my_rides_screen.py!\n\nMake sure my_rides_screen.py is in the same folder.\n\nError: {e}"
-        )
-        print(f"❌ Import error: {e}")
+        messagebox.showerror("QuickCab Error", f"Could not import my_rides_screen.py!\n\nError: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open My Rides window!\n\nError: {e}")
-        print(f"❌ Error opening My Rides: {e}")
 
 def open_voucher_window(parent_window):
     """Open the Voucher screen"""
     try:
         from voucher_screen import VoucherScreen
-        voucher = VoucherScreen(parent_window)
-        print("✅ Voucher window opened successfully!")
+        VoucherScreen(parent_window)
     except ImportError as e:
-        messagebox.showerror(
-            "QuickCab Error", 
-            f"Could not import voucher_screen.py!\n\nMake sure voucher_screen.py is in the same folder.\n\nError: {e}"
-        )
-        print(f"❌ Import error: {e}")
+        messagebox.showerror("QuickCab Error", f"Could not import voucher_screen.py!\n\nError: {e}")
     except Exception as e:
         messagebox.showerror("QuickCab Error", f"Could not open Voucher window!\n\nError: {e}")
-        print(f"❌ Error opening Voucher: {e}")
